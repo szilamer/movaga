@@ -59,7 +59,7 @@ export default function NetworkStats({ members, totalSales }: NetworkStatsProps)
                   ) : null}
                   <div className="relative flex space-x-3">
                     <div>
-                      <span className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center ring-8 ring-white">
+                      <span className="h-8 w-8 rounded-full bg-primary flex items-center justify-center ring-8 ring-white">
                         {member.name ? member.name[0].toUpperCase() : member.email[0].toUpperCase()}
                       </span>
                     </div>

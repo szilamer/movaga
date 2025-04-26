@@ -1,0 +1,25 @@
+services:
+  app:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      - NEXTAUTH_SECRET=your-random-secret-here
+      - DATABASE_URL=postgresql://postgres:password@db:5432/movaga
+      - NEXTAUTH_URL=http://localhost:3000
+    depends_on:
+      - db
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: movaga
+    ports:
+      - '5433:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data: 

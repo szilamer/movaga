@@ -33,13 +33,13 @@ export default function ThankYouPage() {
         <div className="space-x-4">
           <button
             onClick={() => router.push('/products')}
-            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+            className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Vásárlás folytatása
           </button>
           <button
             onClick={() => router.push('/profile/orders')}
-            className="rounded-lg border border-gray-300 px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="rounded-lg border border-border px-6 py-3 font-medium text-foreground transition-colors hover:bg-muted/90"
           >
             Rendeléseim megtekintése
           </button>

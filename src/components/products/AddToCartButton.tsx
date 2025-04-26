@@ -39,7 +39,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
     <button
       onClick={handleAddToCart}
       disabled={product.stock <= 0}
-      className="w-full rounded-lg bg-blue-600 px-8 py-3 text-center font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+      className="w-full rounded-lg bg-primary px-8 py-3 text-center font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {product.stock > 0 ? 'Kosárba' : 'Elfogyott'}
     </button>

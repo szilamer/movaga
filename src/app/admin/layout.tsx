@@ -1,4 +1,4 @@
-import { getServerSession } from 'next-auth'
+import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth/authOptions'
 import { redirect } from 'next/navigation'
 import AdminNav from '@/components/admin/AdminNav'
@@ -11,7 +11,7 @@ export default async function AdminLayout({
   const session = await getServerSession(authOptions)
 
   if (!session?.user?.id) {
-    redirect('/auth/signin')
+    redirect('/auth/login')
   }
 
   // Admin és Superadmin jogosultság ellenőrzése
@@ -22,7 +22,7 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminNav />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 text-foreground">
         {children}
       </main>
     </div>

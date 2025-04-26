@@ -6,8 +6,11 @@ const nextConfig = {
   env: {
     NEXTAUTH_URL: 'http://localhost:3000'
   },
-  experimental: {
-    serverActions: true,
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 };
 

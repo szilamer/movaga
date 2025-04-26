@@ -35,11 +35,11 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b bg-white shadow-sm">
+    <nav className="sticky top-0 z-50 border-b border-gray-700 bg-black shadow-sm">
       <div className="container mx-auto flex items-center justify-between px-4 py-4">
         {/* Bal oldali elemek */}
         <div className="flex flex-1 items-center">
-          <Link href="/" className="mr-8 text-xl font-bold text-blue-600">
+          <Link href="/" className="mr-8 text-xl font-bold text-primary">
             MOVAGA
           </Link>
 
@@ -50,8 +50,8 @@ export function Navbar() {
                 href={item.href}
                 className={`text-sm font-medium transition-colors ${
                   pathname === item.href
-                    ? 'text-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'text-primary'
+                    : 'text-white hover:text-primary'
                 }`}
               >
                 {item.name}
@@ -68,7 +68,7 @@ export function Navbar() {
             <DropdownMenu>
               <DropdownMenuTrigger className="focus:outline-none">
                 <div className="flex items-center space-x-1 rounded-full bg-gray-100 px-2 py-1 hover:bg-gray-200 transition-colors">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-medium text-white">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
                     {session.user.name?.[0] || 'U'}
                   </span>
                   <span className="px-2 text-sm font-medium">{session.user.name || 'Felhasználó'}</span>
@@ -87,9 +87,7 @@ export function Navbar() {
                 </DropdownMenuItem>
                 {session.user.role === 'ADMIN' && (
                   <DropdownMenuItem asChild>
-                    <Link href="/admin">
-                      Admin felület
-                    </Link>
+                    <Link href="/admin/product-management">Admin felület</Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={handleSignOut}>
@@ -101,13 +99,13 @@ export function Navbar() {
             <div className="flex items-center space-x-4">
               <Link 
                 href="/auth/login"
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Bejelentkezés
               </Link>
               <Link 
                 href="/auth/register"
-                className="rounded-md border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
+                className="rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
               >
                 Regisztráció
               </Link>

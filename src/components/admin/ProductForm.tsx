@@ -211,7 +211,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
           required
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md bg-background text-foreground border-border shadow-sm focus:border-primary focus:ring-primary focus:ring-offset-2"
         />
       </div>
 
@@ -224,7 +224,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           rows={4}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md bg-background text-foreground border-border shadow-sm focus:border-primary focus:ring-primary focus:ring-offset-2"
         />
       </div>
 
@@ -239,7 +239,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
             min="0"
             value={formData.price}
             onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md bg-background text-foreground border-border shadow-sm focus:border-primary focus:ring-primary focus:ring-offset-2"
           />
         </div>
 
@@ -252,7 +252,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
             min="0"
             value={formData.discountedPrice || ''}
             onChange={(e) => setFormData({ ...formData, discountedPrice: Number(e.target.value) || undefined })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md bg-background text-foreground border-border shadow-sm focus:border-primary focus:ring-primary focus:ring-offset-2"
           />
         </div>
       </div>
@@ -265,7 +265,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
           required
           value={formData.categoryId}
           onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md bg-background text-foreground border-border shadow-sm focus:border-primary focus:ring-primary focus:ring-offset-2"
         >
           <option value="">Válasszon kategóriát</option>
           {categories.map((category) => (
@@ -286,7 +286,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
           min="0"
           value={formData.stock}
           onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md bg-background text-foreground border-border shadow-sm focus:border-primary focus:ring-primary focus:ring-offset-2"
         />
       </div>
 
@@ -298,7 +298,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
           required
           value={formData.status}
           onChange={(e) => setFormData({ ...formData, status: e.target.value as ProductStatus })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md bg-background text-foreground border-border shadow-sm focus:border-primary focus:ring-primary focus:ring-offset-2"
         >
           <option value="ACTIVE">Aktív</option>
           <option value="INACTIVE">Inaktív</option>
@@ -310,7 +310,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+          className="inline-flex w-full justify-center rounded-md bg-primary px-4 py-2 text-base font-medium text-primary-foreground shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
         >
           {loading ? 'Mentés...' : 'Mentés'}
         </button>

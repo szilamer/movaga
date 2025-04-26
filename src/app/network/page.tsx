@@ -53,7 +53,7 @@ export default function NetworkPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-indigo-500"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-4 border-primary border-t-transparent"></div>
       </div>
     )
   }
@@ -67,14 +67,14 @@ export default function NetworkPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 text-foreground">
       <h1 className="text-3xl font-bold mb-6">Hálózatom</h1>
-      <div className="bg-white p-6 rounded-lg shadow mb-6">
+      <div className="rounded-lg border border-border bg-background p-6 text-foreground shadow mb-6">
         <h2 className="text-xl font-semibold mb-4">Meghívó kódom</h2>
         <div className="flex items-center gap-4">
-          <code className="bg-gray-100 px-4 py-2 rounded">{session?.user?.id}</code>
+          <code className="bg-muted/50 px-4 py-2 rounded text-foreground">{session?.user?.id}</code>
           <button 
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             onClick={() => {
               if (session?.user?.id) {
                 navigator.clipboard.writeText(session.user.id)
@@ -85,7 +85,7 @@ export default function NetworkPage() {
           </button>
         </div>
       </div>
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="rounded-lg border border-border bg-background p-6 text-foreground shadow">
         <h2 className="text-xl font-semibold mb-4">Hálózati struktúra</h2>
         {networkMembers.length > 0 ? (
           <NetworkTree data={networkMembers} />

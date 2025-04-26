@@ -46,9 +46,9 @@ export function CartItem({ item }: CartItemProps) {
             <select
               value={item.quantity}
               onChange={(e) => updateQuantity(item.id, Number(e.target.value))}
-              className="rounded-md border-gray-300 py-1 pl-2 pr-8 text-sm focus:border-blue-500 focus:ring-blue-500"
+              className="rounded-md bg-background text-foreground border-border py-1 pl-2 pr-8 text-sm focus:border-primary focus:ring-primary focus:ring-offset-2"
             >
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+              {[1,2,3,4,5,6,7,8,9,10].map((num) => (
                 <option key={num} value={num}>
                   {num} db
                 </option>

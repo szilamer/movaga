@@ -17,20 +17,20 @@ export default function Navbar() {
   } : null
 
   return (
-    <nav className="bg-white shadow-lg">
+    <nav className="bg-black text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo és főmenü */}
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="text-2xl font-bold text-indigo-600">
+              <Link href="/" className="text-2xl font-bold text-gold">
                 MOVAGA
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <Link
                 href="/products"
-                className="inline-flex items-center px-1 pt-1 text-gray-900 hover:text-indigo-600"
+                className="inline-flex items-center px-1 pt-1 text-white hover:text-gold"
               >
                 Termékek
               </Link>
@@ -38,20 +38,20 @@ export default function Navbar() {
                 <>
                   <Link
                     href="/dashboard"
-                    className="inline-flex items-center px-1 pt-1 text-gray-900 hover:text-indigo-600"
+                    className="inline-flex items-center px-1 pt-1 text-white hover:text-gold"
                   >
                     Dashboard
                   </Link>
                   <Link
                     href="/network"
-                    className="inline-flex items-center px-1 pt-1 text-gray-900 hover:text-indigo-600"
+                    className="inline-flex items-center px-1 pt-1 text-white hover:text-gold"
                   >
                     Hálózat
                   </Link>
                   {user.role === 'SUPERADMIN' && (
                     <Link
                       href="/admin/products"
-                      className="inline-flex items-center px-1 pt-1 text-gray-900 hover:text-indigo-600"
+                      className="inline-flex items-center px-1 pt-1 text-white hover:text-gold"
                     >
                       Termékek kezelése
                     </Link>
@@ -69,13 +69,13 @@ export default function Navbar() {
               <div className="flex space-x-4">
                 <Link
                   href="/auth/login"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50"
+                  className="inline-flex items-center px-4 py-2 border border-gold text-sm font-medium rounded-md text-gold bg-black hover:bg-gray-800"
                 >
                   Bejelentkezés
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-black bg-gold hover:bg-gold/90"
                 >
                   Regisztráció
                 </Link>

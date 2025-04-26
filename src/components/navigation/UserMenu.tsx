@@ -23,10 +23,10 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
     <div className="relative">
       <button
         type="button"
-        className="flex items-center space-x-2 text-gray-700 hover:text-indigo-600"
+        className="flex items-center space-x-2 text-gray-700 hover:text-white"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+        <span className="h-8 w-8 rounded-full bg-gold/10 flex items-center justify-center">
           {user.name ? user.name[0].toUpperCase() : user.email[0].toUpperCase()}
         </span>
         <span>{user.name || user.email}</span>

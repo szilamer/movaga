@@ -30,8 +30,8 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
             onClick={() => router.push('/products')}
             className={`w-full rounded-lg px-4 py-2 text-left text-sm transition-colors ${
               !currentCategory
-                ? 'bg-blue-50 text-blue-700'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-primary/10 text-primary-foreground'
+                : 'text-foreground hover:bg-muted/10'
             }`}
           >
             Összes termék
@@ -46,8 +46,8 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
               }
               className={`w-full rounded-lg px-4 py-2 text-left text-sm transition-colors ${
                 currentCategory === category.id
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-primary/10 text-primary-foreground'
+                  : 'text-foreground hover:bg-muted/10'
               }`}
             >
               {category.name}
@@ -63,7 +63,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
           onChange={(e) =>
             router.push(`/products?${createQueryString('sort', e.target.value)}`)
           }
-          className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+          className="w-full rounded-lg bg-background text-foreground border-border px-4 py-2 text-sm focus:border-primary focus:ring-primary focus:ring-offset-2"
         >
           <option value="newest">Legújabb elöl</option>
           <option value="price-asc">Ár szerint növekvő</option>
@@ -82,7 +82,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
               `/products?${createQueryString('priceRange', e.target.value)}`
             )
           }
-          className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+          className="w-full rounded-lg bg-background text-foreground border-border px-4 py-2 text-sm focus:border-primary focus:ring-primary focus:ring-offset-2"
         >
           <option value="all">Összes</option>
           <option value="0-5000">0 - 5.000 Ft</option>

@@ -6,8 +6,8 @@ export interface Product {
   description: string
   price: number
   discountedPrice?: number | null
-  images: string[]
-  categoryId: string
+  image: string
+  category: string
   stock: number
   createdAt?: string
   updatedAt?: string

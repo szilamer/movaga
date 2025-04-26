@@ -87,7 +87,7 @@ export default function AdminOrdersPage() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
       </div>
     );
   }
@@ -161,7 +161,7 @@ export default function AdminOrdersPage() {
                   <select
                     value={order.status}
                     onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                    className="rounded-md border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="rounded-md bg-background text-foreground border-border text-sm shadow-sm focus:border-primary focus:ring-primary focus:ring-offset-2"
                   >
                     {Object.entries(ORDER_STATUSES).map(([value, { label }]) => (
                       <option key={value} value={value}>

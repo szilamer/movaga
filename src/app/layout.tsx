@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   description: 'MOVAGA webshop',
 }
 
+export const dynamic = 'force-dynamic'
+
 export default function RootLayout({
   children,
 }: {
@@ -18,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="hu">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-[url('/background.jpg')] bg-cover bg-center bg-fixed text-white min-h-screen`}>
         <Providers>
           {children}
         </Providers>

@@ -13,8 +13,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
  
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 47 75% 61%;
+    --primary-foreground: 0 0% 9%;
  
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
@@ -86,13 +86,34 @@
     @apply border-[hsl(var(--border))];
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-black text-white;
+    background-image: url('/background.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+
+  /* Fejléc stílus */
+  nav {
+    @apply bg-black text-white shadow-lg;
+  }
+
+  /* Globális linkek: alapból fehér, hoverkor arany */
+  a {
+    @apply text-white hover:text-primary;
+  }
+
+  /* Gombok arany háttérrel és fekete szöveggel */
+  button,
+  .btn,
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
   }
 }
 
 /* UploadThing styles */
 .ut-button {
-  @apply inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  @apply inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
 }
 
 .ut-upload-icon {
@@ -118,8 +139,6 @@
 .ut-error {
   @apply text-sm text-red-500;
 }
-
-
 
 @layer base {
   * {

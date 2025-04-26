@@ -37,7 +37,7 @@ export default function CheckoutPage() {
   if (status === 'loading' || status === 'unauthenticated') {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
       </div>
     )
   }
@@ -96,7 +96,7 @@ export default function CheckoutPage() {
         <div className="lg:col-span-8">
           <div className="space-y-6">
             {/* Szállítási módok */}
-            <div className="rounded-lg border bg-white p-6">
+            <div className="rounded-lg border border-border bg-background p-6 text-foreground">
               <h2 className="mb-4 text-lg font-semibold">Szállítási mód</h2>
               <div className="space-y-4">
                 {Object.entries(SHIPPING_METHODS).map(([key, method]) => (
@@ -107,7 +107,7 @@ export default function CheckoutPage() {
                       value={key}
                       checked={shippingMethod === key}
                       onChange={(e) => setShippingMethod(e.target.value as keyof typeof SHIPPING_METHODS)}
-                      className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 border-border text-primary focus:ring-primary focus:ring-offset-2"
                     />
                     <span className="flex-1">{method.name}</span>
                     <span className="font-medium">{formatPrice(method.price)}</span>
@@ -117,7 +117,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* Fizetési módok */}
-            <div className="rounded-lg border bg-white p-6">
+            <div className="rounded-lg border border-border bg-background p-6 text-foreground">
               <h2 className="mb-4 text-lg font-semibold">Fizetési mód</h2>
               <div className="space-y-4">
                 {Object.entries(PAYMENT_METHODS).map(([key, method]) => (
@@ -128,7 +128,7 @@ export default function CheckoutPage() {
                       value={key}
                       checked={paymentMethod === key}
                       onChange={(e) => setPaymentMethod(e.target.value as keyof typeof PAYMENT_METHODS)}
-                      className="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 border-border text-primary focus:ring-primary focus:ring-offset-2"
                     />
                     <span>{method.name}</span>
                   </label>
@@ -139,7 +139,7 @@ export default function CheckoutPage() {
         </div>
 
         <div className="lg:col-span-4">
-          <div className="rounded-lg border bg-white p-6">
+          <div className="rounded-lg border border-border bg-background p-6 text-foreground">
             <h2 className="mb-4 text-lg font-semibold">Rendelés összegzése</h2>
             
             <div className="space-y-4">
@@ -161,7 +161,7 @@ export default function CheckoutPage() {
               <button
                 onClick={handleSubmitOrder}
                 disabled={isSubmitting}
-                className="w-full rounded-lg bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
+                className="w-full rounded-lg bg-primary px-8 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Feldolgozás...' : 'Megrendelés véglegesítése'}
               </button>
