@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/lib/auth/authOptions';
+import prisma from '@/lib/prisma';
 
 export async function PATCH(
   request: Request,
@@ -10,7 +10,7 @@ export async function PATCH(
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.email || session.user.role !== 'ADMIN') {
+    if (!session?.user?.role || !['ADMIN', 'SUPERADMIN'].includes(session.user.role)) {
       return NextResponse.json(
         { error: 'Nincs jogosultságod ehhez a művelethez' },
         { status: 403 }

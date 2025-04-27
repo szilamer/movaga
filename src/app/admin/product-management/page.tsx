@@ -27,7 +27,7 @@ export default function AdminProductManagementPage() {
       redirect('/auth/login');
     }
 
-    if (session?.user?.role !== 'ADMIN') {
+    if (!session?.user?.role || !['ADMIN', 'SUPERADMIN'].includes(session.user.role)) {
       redirect('/');
     }
 

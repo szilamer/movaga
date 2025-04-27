@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCart } from '@/store/cart';
 import { type Product } from '@/types';
+import { useDiscount } from '@/hooks/useDiscount';
 
 interface AddToCartButtonProps {
   product: Product;
@@ -12,20 +13,19 @@ interface AddToCartButtonProps {
 export function AddToCartButton({ product }: AddToCartButtonProps) {
   const router = useRouter();
   const { addItem } = useCart();
+  const { getDiscountedPrice } = useDiscount();
+  const priceInfo = getDiscountedPrice(product.price, product.discountedPrice);
 
   const handleAddToCart = () => {
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      discountedPrice: product.discountedPrice,
-      image: product.image,
-      category: product.category,
-      description: product.description,
-      stock: product.stock,
-      createdAt: product.createdAt,
-      updatedAt: product.updatedAt,
-    });
+    // Az eredeti termék adatainak másolása, a felhasználói kedvezménnyel számolt árakkal
+    const productWithDiscount = {
+      ...product,
+      price: priceInfo.finalPrice,         // A végső ár (kedvezménnyel)
+      originalPrice: priceInfo.originalPrice, // Az eredeti ár (kedvezmény nélkül)
+      discountedPrice: priceInfo.hasDiscount ? priceInfo.finalPrice : null,  // Csak ha van kedvezmény
+    };
+
+    addItem(productWithDiscount);
     
     toast.success('Termék a kosárba helyezve!', {
       action: {

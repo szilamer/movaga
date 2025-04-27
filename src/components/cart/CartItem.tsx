@@ -1,21 +1,23 @@
 'use client';
 
 import Image from 'next/image';
+import { useCart, CartItem as CartItemType } from '@/store/cart';
 import { formatPrice } from '@/lib/utils';
-import { useCart, type CartItem } from '@/store/cart';
 
 interface CartItemProps {
-  item: CartItem;
+  item: CartItemType;
 }
 
 export function CartItem({ item }: CartItemProps) {
   const { updateQuantity, removeItem } = useCart();
+  const imageUrl = item.images && item.images.length > 0 ? item.images[0] : '/hero-bg.jpg';
+  const hasDiscount = item.originalPrice && item.originalPrice > item.price;
 
   return (
     <div className="flex items-center space-x-4 py-4">
       <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md">
         <Image
-          src={item.image}
+          src={imageUrl}
           alt={item.name}
           fill
           className="object-cover"
@@ -28,15 +30,15 @@ export function CartItem({ item }: CartItemProps) {
           <div>
             <h3 className="text-base font-medium text-gray-900">{item.name}</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {item.discountedPrice && item.discountedPrice < item.price ? (
-                <>
-                  <span className="font-medium text-red-500">
-                    {formatPrice(item.discountedPrice)}
-                  </span>
-                  <span className="ml-2 text-gray-500 line-through">
+              {hasDiscount ? (
+                <div className="flex items-center">
+                  <span className="font-medium text-gray-900">
                     {formatPrice(item.price)}
                   </span>
-                </>
+                  <span className="ml-2 text-xs text-gray-500 line-through">
+                    {formatPrice(item.originalPrice!)}
+                  </span>
+                </div>
               ) : (
                 <span className="font-medium">{formatPrice(item.price)}</span>
               )}
@@ -66,3 +68,4 @@ export function CartItem({ item }: CartItemProps) {
     </div>
   );
 } 
+

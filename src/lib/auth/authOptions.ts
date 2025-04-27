@@ -13,7 +13,9 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Jelszó', type: 'password' }
       },
       async authorize(credentials) {
+        console.log('[Auth Debug] Authorize called with credentials:', credentials);
         if (!credentials?.email || !credentials?.password) {
+          console.log('[Auth Debug] Missing email or password');
           return null
         }
 
@@ -28,15 +30,23 @@ export const authOptions: NextAuthOptions = {
           }
         })
 
+        console.log('[Auth Debug] User found in DB:', user);
+
         if (!user || !user.hashedPassword || !user.email) {
+          console.log('[Auth Debug] User not found or missing hashedPassword/email');
           return null
         }
 
+        console.log('[Auth Debug] Comparing password:', credentials.password, 'with hash:', user.hashedPassword);
         const isValid = await compare(credentials.password, user.hashedPassword)
+        console.log('[Auth Debug] Password validation result (isValid):', isValid);
+
         if (!isValid) {
+          console.log('[Auth Debug] Password comparison failed');
           return null
         }
 
+        console.log('[Auth Debug] Authorization successful, returning user object');
         return {
           id: user.id,
           email: user.email,

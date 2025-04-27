@@ -4,10 +4,6 @@ import { authOptions } from '@/lib/auth/authOptions'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
-type CartItemWithProduct = Prisma.CartItemGetPayload<{
-  include: { product: true }
-}>
-
 type OrderWithItems = Prisma.OrderGetPayload<{
   include: {
     items: {

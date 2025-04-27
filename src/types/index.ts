@@ -1,16 +1,28 @@
 import { ProductStatus } from '@prisma/client'
 
+export interface DescriptionSection {
+  id: string
+  title: string
+  content: string
+}
+
 export interface Product {
-  id?: string
+  id: string
   name: string
   description: string
+  descriptionSections?: DescriptionSection[]
   price: number
   discountedPrice?: number | null
-  image: string
-  category: string
+  images: string[]
+  categoryId: string
+  category?: Category
   stock: number
-  createdAt?: string
-  updatedAt?: string
+  status: ProductStatus
+  sku?: string | null
+  metaTitle?: string | null
+  metaDescription?: string | null
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 export interface Category {

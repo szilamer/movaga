@@ -32,11 +32,13 @@ export default async function ProductsPage() {
     description: product.description,
     price: product.price,
     discountedPrice: product.discountedPrice,
-    image: product.images[0] || '/placeholder.png',
-    category: product.category.name,
+    images: product.images && product.images.length > 0 ? product.images : ['/hero-bg.jpg'],
+    categoryId: product.categoryId,
+    category: product.category,
     stock: product.stock,
-    createdAt: product.createdAt.toISOString(),
-    updatedAt: product.updatedAt.toISOString(),
+    status: product.status,
+    createdAt: product.createdAt,
+    updatedAt: product.updatedAt,
   }));
 
   return (

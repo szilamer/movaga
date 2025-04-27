@@ -2,13 +2,13 @@ import { writeFile } from 'fs/promises';
 import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/lib/auth/authOptions';
 
 export async function POST(request: NextRequest) {
   try {
     // Ellenőrizzük a jogosultságot
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== 'ADMIN') {
+    if (!session?.user || !['ADMIN', 'SUPERADMIN'].includes(session.user.role)) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { authOptions } from '@/lib/auth/authOptions'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { type Product } from '@/types'
@@ -50,19 +50,14 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
 
   if (!session?.user) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
-  // Ellenőrizzük, hogy a felhasználó ADMIN-e
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email! },
-    select: { role: true },
-  })
-
-  if (user?.role !== 'ADMIN') {
+  // Ellenőrizzük, hogy a felhasználó ADMIN vagy SUPERADMIN-e
+  if (!['ADMIN', 'SUPERADMIN'].includes(session.user.role as string)) {
     return new NextResponse('Forbidden', { status: 403 })
   }
 
@@ -71,6 +66,7 @@ export async function POST(request: Request) {
     const {
       name,
       description,
+      descriptionSections,
       price,
       discountedPrice,
       categoryId,
@@ -91,6 +87,7 @@ export async function POST(request: Request) {
       data: {
         name,
         description,
+        descriptionSections: descriptionSections ? JSON.stringify(descriptionSections) : null,
         price: Number(price),
         discountedPrice: discountedPrice ? Number(discountedPrice) : null,
         categoryId,

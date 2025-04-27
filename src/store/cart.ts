@@ -4,11 +4,12 @@ import { Product } from '@/types';
 
 export interface CartItem extends Product {
   quantity: number;
+  originalPrice?: number; // Az eredeti ár (kedvezmény nélkül)
 }
 
 interface CartStore {
   items: CartItem[];
-  addItem: (product: Product) => void;
+  addItem: (product: Product & { originalPrice?: number }) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;

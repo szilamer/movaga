@@ -95,6 +95,14 @@ export async function GET() {
       discountLevel = 15
     }
 
+    // Frissítsük a felhasználó kedvezményszintjét az adatbázisban is
+    if (user.discountPercent !== discountLevel) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { discountPercent: discountLevel }
+      });
+    }
+
     // Jutalék számítása (6%)
     const commission = totalNetworkSales * 0.06
 

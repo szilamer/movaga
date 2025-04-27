@@ -57,8 +57,13 @@ export async function POST(request: Request) {
       )
     }
 
-    // Ha van referrer_id, ellenőrizzük, hogy létezik-e
+    // Jelszó hashelése
+    const hashedPassword = await hashPassword(json.password)
+    
+    // Referrer kezelése
     let referrerId = json.referrerId || null
+    
+    // Ha van megadott referrerId, ellenőrizzük, hogy létezik-e
     if (referrerId) {
       const referrer = await prisma.user.findUnique({
         where: { id: referrerId }
@@ -69,10 +74,17 @@ export async function POST(request: Request) {
           { status: 400 }
         )
       }
+    } 
+    // Ha nincs referrerId, keressük meg a szuperadmin felhasználót
+    else {
+      const superadmin = await prisma.user.findFirst({
+        where: { role: 'SUPERADMIN' }
+      })
+      
+      if (superadmin) {
+        referrerId = superadmin.id
+      }
     }
-    
-    // Jelszó hashelése
-    const hashedPassword = await hashPassword(json.password)
     
     const user = await prisma.user.create({
       data: {

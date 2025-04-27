@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { type Category } from '@/types';
+import { type Category, type DescriptionSection } from '@/types';
 import { type ProductStatus } from '@prisma/client';
 import Image from 'next/image';
 import { toast } from 'sonner';
+import { ProductDescriptionSections } from './ProductDescriptionSections';
 
 interface FormData {
   name: string;
   description: string;
+  descriptionSections?: DescriptionSection[];
   price: number;
   discountedPrice?: number;
   categoryId: string;
@@ -29,6 +31,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
   const [formData, setFormData] = useState<FormData>(initialData || {
     name: '',
     description: '',
+    descriptionSections: [],
     price: 0,
     categoryId: categories[0]?.id || '',
     stock: 0,
@@ -87,6 +90,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
         setFormData({
           name: '',
           description: '',
+          descriptionSections: [],
           price: 0,
           categoryId: categories[0]?.id || '',
           stock: 0,
@@ -139,6 +143,10 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
     newImages.splice(index, 1);
     setFormData({ ...formData, images: newImages });
     toast.success('Kép sikeresen törölve!');
+  };
+
+  const handleDescriptionSectionsChange = (sections: DescriptionSection[]) => {
+    setFormData({ ...formData, descriptionSections: sections });
   };
 
   return (
@@ -227,6 +235,11 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
           className="mt-1 block w-full rounded-md bg-background text-foreground border-border shadow-sm focus:border-primary focus:ring-primary focus:ring-offset-2"
         />
       </div>
+
+      <ProductDescriptionSections 
+        sections={formData.descriptionSections || []}
+        onChange={handleDescriptionSectionsChange}
+      />
 
       <div className="grid grid-cols-2 gap-4">
         <div>

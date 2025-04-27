@@ -10,6 +10,7 @@ import {
   TagIcon,
   UsersIcon,
   Cog6ToothIcon,
+  PhotoIcon,
 } from '@heroicons/react/24/outline'
 
 const navItems = [
@@ -37,6 +38,11 @@ const navItems = [
     label: 'Felhasználók',
     href: '/admin/users',
     icon: UsersIcon,
+  },
+  {
+    label: 'Főoldal szerkesztése',
+    href: '/admin/homepage',
+    icon: PhotoIcon,
   },
   {
     label: 'Beállítások',

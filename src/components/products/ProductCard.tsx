@@ -1,13 +1,26 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatPrice } from '@/lib/utils';
 import { type Product } from '@/types';
+import { useDiscount } from '@/hooks/useDiscount';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { getDiscountedPrice } = useDiscount();
+  const priceInfo = getDiscountedPrice(product.price, product.discountedPrice);
+  
+  // Use the first image or a default if no images are available
+  const imageUrl = product.images && product.images.length > 0 
+    ? product.images[0] 
+    : '/hero-bg.jpg';
+  
+  const categoryName = typeof product.category === 'string' ? product.category : product.category?.name || '';
+
   return (
     <Link
       href={`/products/${product.id}`}
@@ -15,17 +28,12 @@ export function ProductCard({ product }: ProductCardProps) {
     >
       <div className="relative aspect-square">
         <Image
-          src={product.image || '/placeholder.png'}
+          src={imageUrl}
           alt={product.name}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
-        {product.discountedPrice && product.discountedPrice < product.price && (
-          <div className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs font-semibold text-white">
-            Akció
-          </div>
-        )}
       </div>
       
       <div className="p-4">
@@ -33,23 +41,23 @@ export function ProductCard({ product }: ProductCardProps) {
         <p className="mb-2 line-clamp-2 text-sm text-gray-600">{product.description}</p>
         
         <div className="mb-2">
-          <span className="text-xs text-gray-500">{product.category}</span>
+          <span className="text-xs text-gray-500">{categoryName}</span>
         </div>
         
         <div className="flex items-center justify-between">
           <div>
-            {product.discountedPrice && product.discountedPrice < product.price ? (
-              <>
-                <span className="text-lg font-bold text-red-500">
-                  {formatPrice(product.discountedPrice)}
+            {priceInfo.hasDiscount ? (
+              <div className="flex items-center">
+                <span className="text-lg font-bold text-gray-900">
+                  {formatPrice(priceInfo.finalPrice)}
                 </span>
-                <span className="ml-2 text-sm text-gray-500 line-through">
-                  {formatPrice(product.price)}
+                <span className="ml-2 text-xs text-gray-500 line-through">
+                  {formatPrice(priceInfo.originalPrice)}
                 </span>
-              </>
+              </div>
             ) : (
               <span className="text-lg font-bold text-gray-900">
-                {formatPrice(product.price)}
+                {formatPrice(priceInfo.finalPrice)}
               </span>
             )}
           </div>

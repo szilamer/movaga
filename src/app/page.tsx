@@ -32,11 +32,13 @@ export default async function HomePage() {
     description: p.description,
     price: p.price,
     discountedPrice: p.discountedPrice,
-    image: p.images[0] || '/placeholder.png',
-    category: p.category.name,
+    images: p.images && p.images.length > 0 ? p.images : ['/hero-bg.jpg'],
+    categoryId: p.categoryId,
+    category: p.category,
     stock: p.stock,
-    createdAt: p.createdAt.toISOString(),
-    updatedAt: p.updatedAt.toISOString(),
+    status: p.status,
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt,
   }))
 
   return (

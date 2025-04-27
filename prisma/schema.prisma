@@ -71,6 +71,7 @@ model Product {
   id              String        @id @default(cuid())
   name            String
   description     String
+  descriptionSections Json?
   price           Float
   discountedPrice Float?
   images          String[]
@@ -133,6 +134,16 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
+}
+
+model ShippingMethod {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 enum Role {

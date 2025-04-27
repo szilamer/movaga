@@ -54,12 +54,20 @@ export default function MobileMenu({ isOpen, user, onLogout }: MobileMenuProps) 
             >
               Rendelések
             </Link>
-            {user.role === 'ADMIN' && (
+            {(user.role === 'ADMIN' || user.role === 'SUPERADMIN') && (
               <Link
                 href="/admin"
                 className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300"
               >
-                Admin felület
+                Admin kezelőpult
+              </Link>
+            )}
+            {(user.role === 'ADMIN' || user.role === 'SUPERADMIN') && (
+              <Link
+                href="/admin/product-management"
+                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300"
+              >
+                Termékek kezelése
               </Link>
             )}
             <button

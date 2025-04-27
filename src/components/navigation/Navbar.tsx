@@ -48,7 +48,7 @@ export default function Navbar() {
                   >
                     Hálózat
                   </Link>
-                  {user.role === 'SUPERADMIN' && (
+                  {(user.role === 'ADMIN' || user.role === 'SUPERADMIN') && (
                     <Link
                       href="/admin/products"
                       className="inline-flex items-center px-1 pt-1 text-white hover:text-gold"
