@@ -7,5 +7,5 @@ alwaysApply: true
 # Your rule content
 
 
-for commit use the repository: 
+for commit and push use the repository: 
 https://github.com/szilamer/movaga

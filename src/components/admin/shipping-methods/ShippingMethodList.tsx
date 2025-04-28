@@ -1,21 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ShippingMethod } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
-import ShippingMethodForm from './ShippingMethodForm';
 import { formatPrice } from '@/lib/utils';
-
-interface ShippingMethod {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import ShippingMethodForm from './ShippingMethodForm';
 
 export default function ShippingMethodList() {
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);

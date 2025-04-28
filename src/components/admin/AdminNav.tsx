@@ -11,6 +11,7 @@ import {
   UsersIcon,
   Cog6ToothIcon,
   PhotoIcon,
+  TruckIcon,
 } from '@heroicons/react/24/outline'
 
 const navItems = [
@@ -33,6 +34,11 @@ const navItems = [
     label: 'Kategóriák',
     href: '/admin/categories',
     icon: TagIcon,
+  },
+  {
+    label: 'Szállítási módok',
+    href: '/admin/shipping-methods',
+    icon: TruckIcon,
   },
   {
     label: 'Felhasználók',

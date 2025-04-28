@@ -81,7 +81,7 @@ export async function POST(req: Request) {
     const data = await req.json()
     const { 
       items, 
-      shippingMethod, 
+      shippingMethodId, 
       paymentMethod, 
       total,
       // Shipping address fields
@@ -101,6 +101,20 @@ export async function POST(req: Request) {
       billingCompanyName,
       billingTaxNumber
     } = data
+
+    // Fetch shipping method details
+    const shippingMethod = await prisma.shippingMethod.findUnique({
+      where: {
+        id: shippingMethodId,
+      },
+    })
+
+    if (!shippingMethod) {
+      return NextResponse.json(
+        { error: 'A kiválasztott szállítási mód nem található' },
+        { status: 400 }
+      )
+    }
 
     // Készlet ellenőrzése és foglalása tranzakcióban
     const order = await prisma.$transaction(async (tx) => {
@@ -137,7 +151,7 @@ export async function POST(req: Request) {
         data: {
           userId: session.user.id,
           total,
-          shippingMethod,
+          shippingMethod: shippingMethod.name,
           paymentMethod,
           status: 'PENDING',
           // Address fields

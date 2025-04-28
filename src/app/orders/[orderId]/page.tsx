@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { formatPrice } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
+import { useSession } from 'next-auth/react';
+import { prisma } from '@/lib/prisma';
 
 interface OrderItem {
   id: string;
@@ -25,12 +27,13 @@ interface Order {
   items: OrderItem[];
 }
 
-export default function OrderConfirmationPage({
+export default async function OrderConfirmationPage({
   params,
 }: {
   params: { orderId: string };
 }) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +58,13 @@ export default function OrderConfirmationPage({
 
     fetchOrder();
   }, [params.orderId]);
+
+  // Fetch shipping method details
+  const shippingMethod = await prisma.shippingMethod.findFirst({
+    where: {
+      name: order?.shippingMethod,
+    },
+  });
 
   if (loading) {
     return (
@@ -121,7 +131,14 @@ export default function OrderConfirmationPage({
             </div>
             <div className="mb-4 flex justify-between">
               <span className="font-medium">Szállítási mód:</span>
-              <span>{order.shippingMethod}</span>
+              <div>
+                <span>{order.shippingMethod}</span>
+                {shippingMethod && (
+                  <span className="ml-2 text-sm text-gray-500">
+                    ({formatPrice(shippingMethod.price)})
+                  </span>
+                )}
+              </div>
             </div>
             <div className="mb-4 flex justify-between">
               <span className="font-medium">Fizetési mód:</span>

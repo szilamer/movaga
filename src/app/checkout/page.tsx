@@ -7,12 +7,8 @@ import { useCart } from '@/store/cart'
 import { formatPrice } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
-
-const SHIPPING_METHODS = {
-  GLS: { name: 'GLS házhozszállítás', price: 990 },
-  FOXPOST: { name: 'Foxpost csomagpont', price: 1500 },
-  PICKUP: { name: 'Személyes átvétel', price: 0 },
-} as const
+import { ShippingMethod } from '@prisma/client'
+import { BarionService, BarionPaymentRequest } from '@/lib/barion'
 
 const PAYMENT_METHODS = {
   BARION: { name: 'Barion online fizetés', fee: 0 },
@@ -46,7 +42,8 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
   const { items, getTotal, clearCart } = useCart()
-  const [shippingMethod, setShippingMethod] = useState<keyof typeof SHIPPING_METHODS>('GLS')
+  const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([])
+  const [selectedShippingMethod, setSelectedShippingMethod] = useState<ShippingMethod | null>(null)
   const [paymentMethod, setPaymentMethod] = useState<keyof typeof PAYMENT_METHODS>('BARION')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [step, setStep] = useState<'address' | 'shipping' | 'payment'>('address')
@@ -147,6 +144,28 @@ export default function CheckoutPage() {
     }
   }, [status, session, setValue])
 
+  // Add useEffect to fetch shipping methods
+  useEffect(() => {
+    const fetchShippingMethods = async () => {
+      try {
+        const response = await fetch('/api/shipping-methods')
+        if (!response.ok) {
+          throw new Error('Hiba történt a szállítási módok betöltése során')
+        }
+        const data = await response.json()
+        setShippingMethods(data)
+        if (data.length > 0) {
+          setSelectedShippingMethod(data[0])
+        }
+      } catch (error) {
+        console.error('Error loading shipping methods:', error)
+        toast.error('Hiba történt a szállítási módok betöltése során')
+      }
+    }
+
+    fetchShippingMethods()
+  }, [])
+
   // Ha nincs bejelentkezve vagy még töltődik, loading állapotot mutatunk
   if (status === 'loading' || status === 'unauthenticated') {
     return (
@@ -157,7 +176,7 @@ export default function CheckoutPage() {
   }
 
   const subtotal = getTotal()
-  const shippingCost = SHIPPING_METHODS[shippingMethod].price
+  const shippingCost = selectedShippingMethod?.price || 0
   const total = subtotal + shippingCost
 
   const handleAddressSubmit = (data: AddressFormValues) => {
@@ -216,6 +235,130 @@ export default function CheckoutPage() {
       // Címadatok lekérése az űrlapból
       const formData = watch()
 
+      // Ha Barion fizetést választott
+      if (paymentMethod === 'BARION') {
+        const posKey = process.env.NEXT_PUBLIC_BARION_POS_KEY;
+        console.log('POS Key from env:', posKey);
+
+        if (!posKey) {
+          throw new Error('Barion POS Key is not configured');
+        }
+
+        if (posKey === 'test-pos-key') {
+          throw new Error('Please configure a valid Barion POS Key in .env.local');
+        }
+
+        const barionService = new BarionService(posKey, true);
+        
+        const paymentRequest: BarionPaymentRequest = {
+          POSKey: posKey,
+          PaymentType: 'Immediate',
+          ReservationPeriod: '00:01:00', // Minimum 1 perc
+          DelayedCapturePeriod: '00:01:00', // Minimum 1 perc
+          PaymentWindow: '00:30:00', // 30 perc
+          GuestCheckOut: true,
+          InitiateRecurrence: false,
+          RecurrenceType: '',
+          RecurrenceId: '',
+          FundingSources: ['All'],
+          PaymentRequestId: `PAY-${Date.now()}`,
+          PayerHint: '',
+          CardHolderNameHint: '',
+          Items: items.map(item => ({
+            Name: item.name,
+            Description: item.description || '',
+            Quantity: item.quantity,
+            Unit: 'piece',
+            UnitPrice: item.price,
+            ItemTotal: item.price * item.quantity,
+            SKU: item.id.toString(),
+          })),
+          ShippingAddress: {
+            Country: 'HU',
+            City: formData.shippingCity,
+            Zip: formData.shippingZipCode,
+            Street: formData.shippingAddress,
+            FullName: formData.shippingFullName,
+          },
+          BillingAddress: {
+            Country: 'HU',
+            City: formData.sameAsShipping ? formData.shippingCity : formData.billingCity,
+            Zip: formData.sameAsShipping ? formData.shippingZipCode : formData.billingZipCode,
+            Street: formData.sameAsShipping ? formData.shippingAddress : formData.billingAddress,
+            FullName: formData.sameAsShipping ? formData.shippingFullName : formData.billingFullName,
+          },
+          RedirectUrl: `${window.location.origin}/payment/success`,
+          CallbackUrl: `${window.location.origin}/api/payment/callback`,
+          Currency: 'HUF',
+          Transactions: [
+            {
+              POSTransactionId: `TRANS-${Date.now()}`,
+              Payee: 'szilamer@gmail.com', // Barion fiók email címe
+              Total: total,
+              Comment: 'Rendelés fizetése',
+              Items: items.map(item => ({
+                Name: item.name,
+                Description: item.description || '',
+                Quantity: item.quantity,
+                Unit: 'piece',
+                UnitPrice: item.price,
+                ItemTotal: item.price * item.quantity,
+                SKU: item.id.toString(),
+              })),
+            },
+          ],
+        };
+
+        // Rendelés létrehozása az adatbázisban
+        const orderResponse = await fetch('/api/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            items: items.map(item => ({
+              id: item.id,
+              quantity: item.quantity,
+              price: item.price
+            })),
+            shippingMethodId: selectedShippingMethod?.id,
+            paymentMethod: PAYMENT_METHODS[paymentMethod].name,
+            total: total,
+            
+            // Szállítási cím
+            shippingFullName: formData.shippingFullName,
+            shippingCountry: formData.shippingCountry,
+            shippingCity: formData.shippingCity,
+            shippingAddress: formData.shippingAddress,
+            shippingZipCode: formData.shippingZipCode,
+            shippingPhone: formData.shippingPhone,
+            
+            // Számlázási cím
+            billingFullName: formData.sameAsShipping ? formData.shippingFullName : formData.billingFullName,
+            billingCountry: formData.sameAsShipping ? formData.shippingCountry : formData.billingCountry,
+            billingCity: formData.sameAsShipping ? formData.shippingCity : formData.billingCity,
+            billingAddress: formData.sameAsShipping ? formData.shippingAddress : formData.billingAddress,
+            billingZipCode: formData.sameAsShipping ? formData.shippingZipCode : formData.billingZipCode,
+            billingPhone: formData.sameAsShipping ? formData.shippingPhone : formData.billingPhone,
+            billingCompanyName: formData.isCompany ? formData.billingCompanyName : null,
+            billingTaxNumber: formData.isCompany ? formData.billingTaxNumber : null
+          }),
+        });
+
+        if (!orderResponse.ok) {
+          throw new Error('Hiba történt a rendelés létrehozása során');
+        }
+
+        const order = await orderResponse.json();
+
+        // Barion fizetési oldalra irányítás
+        const paymentUrl = await barionService.startPayment(paymentRequest);
+        window.location.href = paymentUrl;
+        return;
+      }
+
+      // Ha más fizetési módot választott
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
@@ -228,7 +371,7 @@ export default function CheckoutPage() {
             quantity: item.quantity,
             price: item.price
           })),
-          shippingMethod: SHIPPING_METHODS[shippingMethod].name,
+          shippingMethodId: selectedShippingMethod?.id,
           paymentMethod: PAYMENT_METHODS[paymentMethod].name,
           total: total,
           
@@ -250,7 +393,7 @@ export default function CheckoutPage() {
           billingCompanyName: formData.isCompany ? formData.billingCompanyName : null,
           billingTaxNumber: formData.isCompany ? formData.billingTaxNumber : null
         }),
-      })
+      });
 
       if (!response.ok) {
         const error = await response.json()
@@ -532,14 +675,14 @@ export default function CheckoutPage() {
               <div className="rounded-lg border border-border bg-background p-6 text-foreground">
                 <h2 className="mb-4 text-lg font-semibold">Szállítási mód</h2>
                 <div className="space-y-4">
-                  {Object.entries(SHIPPING_METHODS).map(([key, method]) => (
-                    <label key={key} className="flex items-center space-x-3">
+                  {shippingMethods.map((method) => (
+                    <label key={method.id} className="flex items-center space-x-3">
                       <input
                         type="radio"
                         name="shipping"
-                        value={key}
-                        checked={shippingMethod === key}
-                        onChange={(e) => setShippingMethod(e.target.value as keyof typeof SHIPPING_METHODS)}
+                        value={method.id}
+                        checked={selectedShippingMethod?.id === method.id}
+                        onChange={() => setSelectedShippingMethod(method)}
                         className="h-4 w-4 border-border text-primary focus:ring-primary focus:ring-offset-2"
                       />
                       <span className="flex-1">{method.name}</span>

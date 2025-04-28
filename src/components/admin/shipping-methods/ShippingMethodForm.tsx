@@ -1,22 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ShippingMethod } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { PencilIcon, XMarkIcon } from '@heroicons/react/24/outline';
-
-interface ShippingMethod {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
 
 type ShippingMethodFormProps = {
   initialData: ShippingMethod | null;
