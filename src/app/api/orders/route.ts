@@ -79,7 +79,28 @@ export async function POST(req: Request) {
     }
 
     const data = await req.json()
-    const { items, shippingMethod, paymentMethod, total } = data
+    const { 
+      items, 
+      shippingMethod, 
+      paymentMethod, 
+      total,
+      // Shipping address fields
+      shippingFullName,
+      shippingCountry,
+      shippingCity,
+      shippingAddress,
+      shippingZipCode,
+      shippingPhone,
+      // Billing address fields
+      billingFullName,
+      billingCountry,
+      billingCity,
+      billingAddress,
+      billingZipCode,
+      billingPhone,
+      billingCompanyName,
+      billingTaxNumber
+    } = data
 
     // Készlet ellenőrzése és foglalása tranzakcióban
     const order = await prisma.$transaction(async (tx) => {
@@ -119,6 +140,21 @@ export async function POST(req: Request) {
           shippingMethod,
           paymentMethod,
           status: 'PENDING',
+          // Address fields
+          shippingFullName,
+          shippingCountry,
+          shippingCity,
+          shippingAddress,
+          shippingZipCode,
+          shippingPhone,
+          billingFullName,
+          billingCountry,
+          billingCity,
+          billingAddress,
+          billingZipCode,
+          billingPhone,
+          billingCompanyName,
+          billingTaxNumber,
           items: {
             create: items.map((item: OrderItem) => ({
               productId: item.id,

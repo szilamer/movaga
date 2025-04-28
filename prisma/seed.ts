@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client')
 const { hash } = require('bcrypt')
 
 const prisma = new PrismaClient()
+const SALT_ROUNDS = 10
 
 async function main() {
   // Szuperadmin felhasználó létrehozása vagy frissítése
@@ -10,7 +11,7 @@ async function main() {
     where: { email: superadminEmail }
   })
 
-  const hashedPassword = await hash('Admin123!', 12)
+  const hashedPassword = await hash('Admin123!', SALT_ROUNDS)
 
   if (existingSuperadmin) {
     // Ha létezik, frissítjük a szerepkörét és jelszavát
