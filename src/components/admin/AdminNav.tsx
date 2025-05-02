@@ -12,6 +12,7 @@ import {
   Cog6ToothIcon,
   PhotoIcon,
   TruckIcon,
+  EnvelopeIcon,
 } from '@heroicons/react/24/outline'
 
 const navItems = [
@@ -39,6 +40,11 @@ const navItems = [
     label: 'Szállítási módok',
     href: '/admin/shipping-methods',
     icon: TruckIcon,
+  },
+  {
+    label: 'Email sablonok',
+    href: '/admin/email-templates',
+    icon: EnvelopeIcon,
   },
   {
     label: 'Felhasználók',

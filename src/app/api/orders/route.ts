@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { sendOrderStatusEmail } from '@/lib/email'
 
 type OrderWithItems = Prisma.OrderGetPayload<{
   include: {
@@ -69,21 +70,13 @@ export async function GET(request: Request) {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      console.log('Nincs session POST-nál:', session)
-      return NextResponse.json(
-        { error: 'Nem vagy bejelentkezve' },
-        { status: 401 }
-      )
-    }
-
     const data = await req.json()
     const { 
       items, 
       shippingMethodId, 
       paymentMethod, 
       total,
+      barionPaymentId,
       // Shipping address fields
       shippingFullName,
       shippingCountry,
@@ -149,11 +142,12 @@ export async function POST(req: Request) {
       // Rendelés létrehozása
       return await tx.order.create({
         data: {
-          userId: session.user.id,
+          userId: session?.user?.id || null, // Vendég vásárlás esetén null
           total,
           shippingMethod: shippingMethod.name,
           paymentMethod,
           status: 'PENDING',
+          barionPaymentId,
           // Address fields
           shippingFullName,
           shippingCountry,
@@ -179,6 +173,24 @@ export async function POST(req: Request) {
         }
       })
     })
+
+    // Email küldése a felhasználónak
+    const userEmail = session?.user?.email || data.shippingEmail;
+    if (userEmail) {
+      try {
+        await sendOrderStatusEmail({
+          to: userEmail,
+          orderNumber: order.id,
+          total: order.total,
+          shippingMethod: order.shippingMethod,
+          paymentMethod: order.paymentMethod,
+          orderStatus: 'PENDING',
+        });
+        console.log(`Order confirmation email sent to ${userEmail} for order ${order.id}`);
+      } catch (error) {
+        console.error('Failed to send order confirmation email:', error);
+      }
+    }
 
     return NextResponse.json(order)
   } catch (error) {

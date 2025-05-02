@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { formatPrice } from './utils';
+import prisma from './prisma';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -11,40 +12,96 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-interface OrderConfirmationEmailParams {
+interface OrderEmailParams {
   to: string;
   orderNumber: string;
   total: number;
   shippingMethod: string;
   paymentMethod: string;
+  orderStatus: string;
 }
 
+/**
+ * Replaces placeholders in a template with actual values
+ */
+function replacePlaceholders(text: string, data: Record<string, string | number>): string {
+  return text.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    const value = data[key];
+    if (key === 'total' && typeof value === 'number') {
+      return formatPrice(value);
+    }
+    return value !== undefined ? String(value) : match;
+  });
+}
+
+/**
+ * Sends an order status notification email
+ */
+export async function sendOrderStatusEmail({
+  to,
+  orderNumber,
+  total,
+  shippingMethod,
+  paymentMethod,
+  orderStatus,
+}: OrderEmailParams) {
+  try {
+    // Find the email template for the given order status
+    const template = await prisma.emailTemplate.findFirst({
+      where: {
+        triggerStatus: orderStatus as any,
+        isActive: true,
+      },
+    });
+
+    if (!template) {
+      console.error(`No active email template found for order status: ${orderStatus}`);
+      return false;
+    }
+
+    // Replace placeholders in subject and content
+    const data = {
+      orderNumber,
+      total,
+      shippingMethod,
+      paymentMethod,
+    };
+
+    const subject = replacePlaceholders(template.subject, data);
+    const html = replacePlaceholders(template.content, data);
+
+    // Send email
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM,
+      to,
+      subject,
+      html,
+    });
+
+    console.log(`Order status email sent to ${to} for order ${orderNumber} (status: ${orderStatus})`);
+    return true;
+  } catch (error) {
+    console.error('Error sending order status email:', error);
+    return false;
+  }
+}
+
+/**
+ * Legacy function - kept for backward compatibility
+ */
 export async function sendOrderConfirmationEmail({
   to,
   orderNumber,
   total,
   shippingMethod,
   paymentMethod,
-}: OrderConfirmationEmailParams) {
-  const html = `
-    <h1>Köszönjük a rendelésed!</h1>
-    <p>A rendelésed sikeresen feldolgoztuk.</p>
-    
-    <h2>Rendelés részletei:</h2>
-    <p>Rendelés azonosító: ${orderNumber}</p>
-    <p>Végösszeg: ${formatPrice(total)}</p>
-    <p>Szállítási mód: ${shippingMethod}</p>
-    <p>Fizetési mód: ${paymentMethod}</p>
-    
-    <p>Hamarosan felvesszük veled a kapcsolatot a szállítás részleteivel kapcsolatban.</p>
-    
-    <p>Üdvözlettel,<br>MOVAGA csapata</p>
-  `;
-
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM,
+}: OrderEmailParams) {
+  return sendOrderStatusEmail({
     to,
-    subject: `Rendelés visszaigazolás - ${orderNumber}`,
-    html,
+    orderNumber,
+    total,
+    shippingMethod,
+    paymentMethod,
+    orderStatus: 'PENDING',
   });
 } 
