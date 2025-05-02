@@ -51,7 +51,7 @@ export default function HeroSection() {
           className="relative w-96 h-96 mb-4"
         >
           <Image
-            src="/ChatGPT Image 2025. ápr. 26. 14_55_53.png"
+            src="/logo.png"
             alt="Movaga Logo"
             fill
             className="object-contain"

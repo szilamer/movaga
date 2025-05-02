@@ -200,7 +200,7 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
             <div className="absolute inset-0 bg-black/60 hover:bg-black/20 transition-colors duration-1000 flex flex-col items-center justify-center">
               <div className="relative w-40 h-40 mb-4">
                 <Image
-                  src="/ChatGPT Image 2025. ápr. 26. 14_55_53.png"
+                  src="/logo.png"
                   alt="Hero Logo Preview"
                   fill
                   className="object-contain"
