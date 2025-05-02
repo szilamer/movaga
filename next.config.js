@@ -9,7 +9,9 @@ const nextConfig = {
     ],
   },
   env: {
-    NEXTAUTH_URL: 'http://localhost:3000'
+    NEXTAUTH_URL: process.env.NODE_ENV === 'production' 
+      ? 'https://movaga.onrender.com' 
+      : 'http://localhost:3000'
   },
   typescript: {
     ignoreBuildErrors: true,
