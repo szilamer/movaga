@@ -37,21 +37,20 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions)
     console.log('[DEBUG] Session:', session);
 
-    if (!session?.user?.email) {
-      console.log('[DEBUG] Nincs bejelentkezve - session hiányzik vagy nincs email');
+    if (!session?.user) {
+      console.log('[DEBUG] Nincs bejelentkezve - session hiányzik');
       return NextResponse.json(
         { error: 'Nem vagy bejelentkezve' },
         { status: 401 }
       )
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    })
-    console.log('[DEBUG] Talált felhasználó:', user?.email, 'role:', user?.role);
+    // Session alapján ellenőrizzük a jogosultságot közvetlenül
+    const userRole = session.user.role as string;
+    console.log('[DEBUG] Felhasználó szerepköre session alapján:', userRole);
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPERADMIN')) {
-      console.log('[DEBUG] Nem megfelelő jogosultságú felhasználó próbál kategóriát létrehozni:', user?.role);
+    if (userRole !== 'ADMIN' && userRole !== 'SUPERADMIN') {
+      console.log('[DEBUG] Nem megfelelő jogosultságú felhasználó próbál kategóriát létrehozni:', userRole);
       return NextResponse.json(
         { error: 'Nincs jogosultságod ehhez a művelethez' },
         { status: 403 }

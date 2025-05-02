@@ -37,21 +37,20 @@ export async function PUT(
     const session = await getServerSession(authOptions)
     console.log('[DEBUG][PUT] Session:', session);
 
-    if (!session?.user?.email) {
-      console.log('[DEBUG][PUT] Nincs bejelentkezve - session hiányzik vagy nincs email');
+    if (!session?.user) {
+      console.log('[DEBUG][PUT] Nincs bejelentkezve - session hiányzik');
       return NextResponse.json(
         { error: 'Nem vagy bejelentkezve' },
         { status: 401 }
       )
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    })
-    console.log('[DEBUG][PUT] Talált felhasználó:', user?.email, 'role:', user?.role);
+    // Session alapján ellenőrizzük a jogosultságot közvetlenül
+    const userRole = session.user.role as string;
+    console.log('[DEBUG][PUT] Felhasználó szerepköre session alapján:', userRole);
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPERADMIN')) {
-      console.log('[DEBUG][PUT] Nem megfelelő jogosultságú felhasználó próbál kategóriát szerkeszteni:', user?.role);
+    if (userRole !== 'ADMIN' && userRole !== 'SUPERADMIN') {
+      console.log('[DEBUG][PUT] Nem megfelelő jogosultságú felhasználó próbál kategóriát szerkeszteni:', userRole);
       return NextResponse.json(
         { error: 'Nincs jogosultságod ehhez a művelethez' },
         { status: 403 }
@@ -114,21 +113,20 @@ export async function DELETE(
     const session = await getServerSession(authOptions)
     console.log('[DEBUG][DELETE] Session:', session);
 
-    if (!session?.user?.email) {
-      console.log('[DEBUG][DELETE] Nincs bejelentkezve - session hiányzik vagy nincs email');
+    if (!session?.user) {
+      console.log('[DEBUG][DELETE] Nincs bejelentkezve - session hiányzik');
       return NextResponse.json(
         { error: 'Nem vagy bejelentkezve' },
         { status: 401 }
       )
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    })
-    console.log('[DEBUG][DELETE] Talált felhasználó:', user?.email, 'role:', user?.role);
+    // Session alapján ellenőrizzük a jogosultságot közvetlenül
+    const userRole = session.user.role as string;
+    console.log('[DEBUG][DELETE] Felhasználó szerepköre session alapján:', userRole);
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPERADMIN')) {
-      console.log('[DEBUG][DELETE] Nem megfelelő jogosultságú felhasználó próbál kategóriát törölni:', user?.role);
+    if (userRole !== 'ADMIN' && userRole !== 'SUPERADMIN') {
+      console.log('[DEBUG][DELETE] Nem megfelelő jogosultságú felhasználó próbál kategóriát törölni:', userRole);
       return NextResponse.json(
         { error: 'Nincs jogosultságod ehhez a művelethez' },
         { status: 403 }
