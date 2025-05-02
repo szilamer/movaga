@@ -1,0 +1,376 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movaga Project Structure (D3)</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100%;
+      height: 100vh;
+    }
+    .node circle {
+      stroke-width: 1.5px;
+    }
+    .node text {
+      font-size: 12px;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+    .link {
+      fill: none;
+      stroke: #ccc;
+      stroke-width: 1.5px;
+    }
+    .info-panel {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background-color: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      font-size: 14px;
+      z-index: 100;
+    }
+    .legend {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      z-index: 100;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
+    .legend-color {
+      width: 15px;
+      height: 15px;
+      margin-right: 8px;
+      border-radius: 2px;
+    }
+    .controls {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background-color: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      z-index: 100;
+    }
+    button {
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    button:hover {
+      background-color: #4338ca;
+    }
+    #tooltip {
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 5px 10px;
+      border-radius: 3px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      pointer-events: none;
+      font-size: 12px;
+      display: none;
+      z-index: 200;
+    }
+  </style>
+</head>
+<body>
+  <div id="tooltip"></div>
+  <div class="info-panel">
+    <h3>Movaga Project Structure</h3>
+    <p>Click on nodes to expand/collapse. Hover for details.</p>
+  </div>
+  <div class="legend">
+    <h3>Legend</h3>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #6366f1;"></div>
+      <div>Project Root</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #8b5cf6;"></div>
+      <div>Source Directory</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #ec4899;"></div>
+      <div>App Directory</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #f97316;"></div>
+      <div>Components Directory</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #14b8a6;"></div>
+      <div>Library Directory</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #f59e0b;"></div>
+      <div>Config File</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #3b82f6;"></div>
+      <div>Regular Directory</div>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background-color: #64748b;"></div>
+      <div>Regular File</div>
+    </div>
+  </div>
+  <div class="controls">
+    <button id="expandAll">Expand All</button>
+    <button id="collapseAll">Collapse All</button>
+    <button id="resetZoom">Reset View</button>
+  </div>
+  <svg id="tree-container" width="100%" height="100%"></svg>
+
+  <script>
+    // For debugging
+    console.log("D3 visualization script starting");
+    
+    // Load project structure data
+    const data = {"name":"Project Root","path":".","children":[{"name":".dockerignore","path":".dockerignore","children":[],"color":"#64748b"},{"name":".env","path":".env","children":[],"color":"#64748b"},{"name":".env.local","path":".env.local","children":[],"color":"#64748b"},{"name":".gitignore","path":".gitignore","children":[],"color":"#64748b"},{"name":"Dockerfile","path":"Dockerfile","children":[],"color":"#64748b"},{"name":"backup_api_folders","path":"backup_api_folders","children":[{"name":"[productId]","path":"backup_api_folders/[productId]","children":[{"name":"route.ts","path":"backup_api_folders/[productId]/route.ts","children":[],"color":"#64748b"}],"color":"#3b82f6"}],"color":"#3b82f6"},{"name":"check-orders.js","path":"check-orders.js","children":[],"color":"#64748b"},{"name":"components.json","path":"components.json","children":[],"color":"#64748b"},{"name":"docker-compose.yml","path":"docker-compose.yml","children":[],"color":"#64748b"},{"name":"entrypoint.sh","path":"entrypoint.sh","children":[],"color":"#64748b"},{"name":"movaga@0.1.0","path":"movaga@0.1.0","children":[],"color":"#64748b"},{"name":"movga_spec.md","path":"movga_spec.md","children":[],"color":"#64748b"},{"name":"next","path":"next","children":[],"color":"#64748b"},{"name":"next-env.d.ts","path":"next-env.d.ts","children":[],"color":"#64748b"},{"name":"next.config.js","path":"next.config.js","children":[],"color":"#f59e0b"},{"name":"package-lock.json","path":"package-lock.json","children":[],"color":"#64748b"},{"name":"package.json","path":"package.json","children":[],"color":"#f59e0b"},{"name":"postcss.config.js","path":"postcss.config.js","children":[],"color":"#f59e0b"},{"name":"prisma","path":"prisma","children":[{"name":"migrations","path":"prisma/migrations","children":[{"name":"20250330172655_init","path":"prisma/migrations/20250330172655_init","children":[{"name":"migration.sql","path":"prisma/migrations/20250330172655_init/migration.sql","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"20250330175003_add_orders","path":"prisma/migrations/20250330175003_add_orders","children":[{"name":"migration.sql","path":"prisma/migrations/20250330175003_add_orders/migration.sql","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"20250331152549_add_order_models","path":"prisma/migrations/20250331152549_add_order_models","children":[{"name":"migration.sql","path":"prisma/migrations/20250331152549_add_order_models/migration.sql","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"20250331154225_add_order_fields","path":"prisma/migrations/20250331154225_add_order_fields","children":[{"name":"migration.sql","path":"prisma/migrations/20250331154225_add_order_fields/migration.sql","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"20250331155459_add_order_status_enum","path":"prisma/migrations/20250331155459_add_order_status_enum","children":[{"name":"migration.sql","path":"prisma/migrations/20250331155459_add_order_status_enum/migration.sql","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"20250427152346_add_shipping_methods","path":"prisma/migrations/20250427152346_add_shipping_methods","children":[{"name":"migration.sql","path":"prisma/migrations/20250427152346_add_shipping_methods/migration.sql","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"20250427153722_add_shipping_method_id_to_order","path":"prisma/migrations/20250427153722_add_shipping_method_id_to_order","children":[{"name":"migration.sql","path":"prisma/migrations/20250427153722_add_shipping_method_id_to_order/migration.sql","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"20250427154619_remove_shipping_method_id_from_order","path":"prisma/migrations/20250427154619_remove_shipping_method_id_from_order","children":[{"name":"migration.sql","path":"prisma/migrations/20250427154619_remove_shipping_method_id_from_order/migration.sql","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"20250427173132_add_description_sections","path":"prisma/migrations/20250427173132_add_description_sections","children":[{"name":"migration.sql","path":"prisma/migrations/20250427173132_add_description_sections/migration.sql","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"20250501081319_add_guest_orders","path":"prisma/migrations/20250501081319_add_guest_orders","children":[{"name":"migration.sql","path":"prisma/migrations/20250501081319_add_guest_orders/migration.sql","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"20250501084405_optional_user_id_for_orders","path":"prisma/migrations/20250501084405_optional_user_id_for_orders","children":[{"name":"migration.sql","path":"prisma/migrations/20250501084405_optional_user_id_for_orders/migration.sql","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"20250501150310_add_barion_payment_id","path":"prisma/migrations/20250501150310_add_barion_payment_id","children":[{"name":"migration.sql","path":"prisma/migrations/20250501150310_add_barion_payment_id/migration.sql","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"migration_lock.toml","path":"prisma/migrations/migration_lock.toml","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"schema.prisma","path":"prisma/schema.prisma","children":[],"color":"#64748b"},{"name":"seed.ts","path":"prisma/seed.ts","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"progress.md","path":"progress.md","children":[],"color":"#64748b"},{"name":"prompt.txt","path":"prompt.txt","children":[],"color":"#64748b"},{"name":"public","path":"public","children":[{"name":"ChatGPT Image 2025. ápr. 26. 14_55_53.png","path":"public/ChatGPT Image 2025. ápr. 26. 14_55_53.png","children":[],"color":"#64748b"},{"name":"Color logo with background.svg","path":"public/Color logo with background.svg","children":[],"color":"#64748b"},{"name":"background.jpg","path":"public/background.jpg","children":[],"color":"#64748b"},{"name":"d3-structure.html","path":"public/d3-structure.html","children":[],"color":"#64748b"},{"name":"hero-bg.jpg","path":"public/hero-bg.jpg","children":[],"color":"#64748b"},{"name":"placeholder.png","path":"public/placeholder.png","children":[],"color":"#64748b"},{"name":"project-structure.html","path":"public/project-structure.html","children":[],"color":"#64748b"},{"name":"uploads","path":"public/uploads","children":[{"name":"homepage","path":"public/uploads/homepage","children":[{"name":"background-1745766484370-1745649449837-ChatGPTImageApr262025082644AM.png","path":"public/uploads/homepage/background-1745766484370-1745649449837-ChatGPTImageApr262025082644AM.png","children":[],"color":"#64748b"},{"name":"heroBackground-1745767117213-hero-bg.jpg","path":"public/uploads/homepage/heroBackground-1745767117213-hero-bg.jpg","children":[],"color":"#64748b"},{"name":"pageBackground-1745767133705-background.jpg","path":"public/uploads/homepage/pageBackground-1745767133705-background.jpg","children":[],"color":"#64748b"},{"name":"settings.json","path":"public/uploads/homepage/settings.json","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"products","path":"public/uploads/products","children":[{"name":"1743424176888-Mindcontrol1.jpg","path":"public/uploads/products/1743424176888-Mindcontrol1.jpg","children":[],"color":"#64748b"},{"name":"1743426485612-Mindcontrol1.jpg","path":"public/uploads/products/1743426485612-Mindcontrol1.jpg","children":[],"color":"#64748b"},{"name":"1743426542938-VitaminDailyProtectFinal.jpg","path":"public/uploads/products/1743426542938-VitaminDailyProtectFinal.jpg","children":[],"color":"#64748b"},{"name":"1745648817447-ChatGPTImageApr262025082644AM.png","path":"public/uploads/products/1745648817447-ChatGPTImageApr262025082644AM.png","children":[],"color":"#64748b"},{"name":"1745649449837-ChatGPTImageApr262025082644AM.png","path":"public/uploads/products/1745649449837-ChatGPTImageApr262025082644AM.png","children":[],"color":"#64748b"},{"name":"1745667379749-1743426485612-Mindcontrol1.jpg","path":"public/uploads/products/1745667379749-1743426485612-Mindcontrol1.jpg","children":[],"color":"#64748b"},{"name":"1745667515149-1743424176888-Mindcontrol1.jpg","path":"public/uploads/products/1745667515149-1743424176888-Mindcontrol1.jpg","children":[],"color":"#64748b"},{"name":"1745676705505-1743424176888-Mindcontrol1.jpg","path":"public/uploads/products/1745676705505-1743424176888-Mindcontrol1.jpg","children":[],"color":"#64748b"},{"name":"1745761563090-1743424176888-Mindcontrol1.jpg","path":"public/uploads/products/1745761563090-1743424176888-Mindcontrol1.jpg","children":[],"color":"#64748b"},{"name":"1745762840725-1743424176888-Mindcontrol1.jpg","path":"public/uploads/products/1745762840725-1743424176888-Mindcontrol1.jpg","children":[],"color":"#64748b"},{"name":"1745775020897-1743426542938-VitaminDailyProtectFinal.jpg","path":"public/uploads/products/1745775020897-1743426542938-VitaminDailyProtectFinal.jpg","children":[],"color":"#64748b"},{"name":"1745775255789-1743424176888-Mindcontrol1.jpg","path":"public/uploads/products/1745775255789-1743424176888-Mindcontrol1.jpg","children":[],"color":"#64748b"},{"name":"1745817906767-1743424176888-Mindcontrol1.jpg","path":"public/uploads/products/1745817906767-1743424176888-Mindcontrol1.jpg","children":[],"color":"#64748b"},{"name":"1746088681396-1743424176888-Mindcontrol1.jpg","path":"public/uploads/products/1746088681396-1743424176888-Mindcontrol1.jpg","children":[],"color":"#64748b"},{"name":"1746110349107-1743426485612-Mindcontrol1.jpg","path":"public/uploads/products/1746110349107-1743426485612-Mindcontrol1.jpg","children":[],"color":"#64748b"}],"color":"#3b82f6"}],"color":"#3b82f6"}],"color":"#3b82f6"},{"name":"scripts","path":"scripts","children":[{"name":"README.md","path":"scripts/README.md","children":[],"color":"#64748b"},{"name":"build.ps1","path":"scripts/build.ps1","children":[],"color":"#64748b"},{"name":"create-admin.ts","path":"scripts/create-admin.ts","children":[],"color":"#64748b"},{"name":"dev.ps1","path":"scripts/dev.ps1","children":[],"color":"#64748b"},{"name":"project-structure-d3.js","path":"scripts/project-structure-d3.js","children":[],"color":"#64748b"},{"name":"project-structure-visualizer.js","path":"scripts/project-structure-visualizer.js","children":[],"color":"#64748b"}],"color":"#3b82f6"},{"name":"src","path":"src","children":[{"name":"app","path":"src/app","children":[{"name":"admin","path":"src/app/admin","children":[{"name":"categories","path":"src/app/admin/categories","children":[{"name":"page.tsx","path":"src/app/admin/categories/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"homepage","path":"src/app/admin/homepage","children":[{"name":"page.tsx","path":"src/app/admin/homepage/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"layout.tsx","path":"src/app/admin/layout.tsx","children":[],"color":"#8b5cf6"},{"name":"orders","path":"src/app/admin/orders","children":[{"name":"page.tsx","path":"src/app/admin/orders/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"page.tsx","path":"src/app/admin/page.tsx","children":[],"color":"#8b5cf6"},{"name":"product-management","path":"src/app/admin/product-management","children":[{"name":"edit","path":"src/app/admin/product-management/edit","children":[{"name":"[id]","path":"src/app/admin/product-management/edit/[id]","children":[{"name":"page.tsx","path":"src/app/admin/product-management/edit/[id]/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"page.tsx","path":"src/app/admin/product-management/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"shipping-methods","path":"src/app/admin/shipping-methods","children":[{"name":"page.tsx","path":"src/app/admin/shipping-methods/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"api","path":"src/app/api","children":[{"name":"admin","path":"src/app/api/admin","children":[{"name":"homepage","path":"src/app/api/admin/homepage","children":[{"name":"route.ts","path":"src/app/api/admin/homepage/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"orders","path":"src/app/api/admin/orders","children":[{"name":"[orderId]","path":"src/app/api/admin/orders/[orderId]","children":[{"name":"route.ts","path":"src/app/api/admin/orders/[orderId]/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"route.ts","path":"src/app/api/admin/orders/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"shipping-methods","path":"src/app/api/admin/shipping-methods","children":[{"name":"[id]","path":"src/app/api/admin/shipping-methods/[id]","children":[{"name":"route.ts","path":"src/app/api/admin/shipping-methods/[id]/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"route.ts","path":"src/app/api/admin/shipping-methods/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"auth","path":"src/app/api/auth","children":[{"name":"[...nextauth]","path":"src/app/api/auth/[...nextauth]","children":[{"name":"route.ts","path":"src/app/api/auth/[...nextauth]/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"route.ts","path":"src/app/api/auth/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"cart","path":"src/app/api/cart","children":[{"name":"route.ts","path":"src/app/api/cart/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"categories","path":"src/app/api/categories","children":[{"name":"[id]","path":"src/app/api/categories/[id]","children":[{"name":"route.ts","path":"src/app/api/categories/[id]/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"route.ts","path":"src/app/api/categories/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"orders","path":"src/app/api/orders","children":[{"name":"[orderId]","path":"src/app/api/orders/[orderId]","children":[{"name":"route.ts","path":"src/app/api/orders/[orderId]/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"route.ts","path":"src/app/api/orders/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"payment","path":"src/app/api/payment","children":[{"name":"callback","path":"src/app/api/payment/callback","children":[{"name":"route.ts","path":"src/app/api/payment/callback/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"products","path":"src/app/api/products","children":[{"name":"[id]","path":"src/app/api/products/[id]","children":[{"name":"route.ts","path":"src/app/api/products/[id]/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"[id]_backup","path":"src/app/api/products/[id]_backup","children":[],"color":"#8b5cf6"},{"name":"route.ts","path":"src/app/api/products/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"shipping-methods","path":"src/app/api/shipping-methods","children":[{"name":"route.ts","path":"src/app/api/shipping-methods/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"upload","path":"src/app/api/upload","children":[{"name":"route.ts","path":"src/app/api/upload/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"uploadthing","path":"src/app/api/uploadthing","children":[{"name":"core.ts","path":"src/app/api/uploadthing/core.ts","children":[],"color":"#8b5cf6"},{"name":"route.ts","path":"src/app/api/uploadthing/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"users","path":"src/app/api/users","children":[{"name":"addresses","path":"src/app/api/users/addresses","children":[{"name":"route.ts","path":"src/app/api/users/addresses/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"current","path":"src/app/api/users/current","children":[{"name":"route.ts","path":"src/app/api/users/current/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"network","path":"src/app/api/users/network","children":[{"name":"route.ts","path":"src/app/api/users/network/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"orders","path":"src/app/api/users/orders","children":[{"name":"route.ts","path":"src/app/api/users/orders/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"profile","path":"src/app/api/users/profile","children":[{"name":"route.ts","path":"src/app/api/users/profile/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"route.ts","path":"src/app/api/users/route.ts","children":[],"color":"#8b5cf6"},{"name":"stats","path":"src/app/api/users/stats","children":[{"name":"route.ts","path":"src/app/api/users/stats/route.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"}],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"auth","path":"src/app/auth","children":[{"name":"login","path":"src/app/auth/login","children":[{"name":"page.tsx","path":"src/app/auth/login/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"register","path":"src/app/auth/register","children":[{"name":"page.tsx","path":"src/app/auth/register/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"cart","path":"src/app/cart","children":[{"name":"page.tsx","path":"src/app/cart/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"checkout","path":"src/app/checkout","children":[{"name":"page.tsx","path":"src/app/checkout/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"dashboard","path":"src/app/dashboard","children":[{"name":"page.tsx","path":"src/app/dashboard/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"globals.css","path":"src/app/globals.css","children":[],"color":"#8b5cf6"},{"name":"layout.tsx","path":"src/app/layout.tsx","children":[],"color":"#8b5cf6"},{"name":"network","path":"src/app/network","children":[{"name":"page.tsx","path":"src/app/network/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"orders","path":"src/app/orders","children":[{"name":"[orderId]","path":"src/app/orders/[orderId]","children":[{"name":"page.tsx","path":"src/app/orders/[orderId]/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"page.tsx","path":"src/app/orders/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"page.tsx","path":"src/app/page.tsx","children":[],"color":"#8b5cf6"},{"name":"payment","path":"src/app/payment","children":[{"name":"success","path":"src/app/payment/success","children":[{"name":"page.tsx","path":"src/app/payment/success/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"payment-test","path":"src/app/payment-test","children":[{"name":"page.tsx","path":"src/app/payment-test/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"products","path":"src/app/products","children":[{"name":"[id]","path":"src/app/products/[id]","children":[{"name":"page.tsx","path":"src/app/products/[id]/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"page.tsx","path":"src/app/products/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"profile","path":"src/app/profile","children":[{"name":"orders","path":"src/app/profile/orders","children":[{"name":"page.tsx","path":"src/app/profile/orders/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"page.tsx","path":"src/app/profile/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"superadmin","path":"src/app/superadmin","children":[{"name":"layout.tsx","path":"src/app/superadmin/layout.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"thank-you","path":"src/app/thank-you","children":[{"name":"page.tsx","path":"src/app/thank-you/page.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"components","path":"src/components","children":[{"name":"AboutUsSection.tsx","path":"src/components/AboutUsSection.tsx","children":[],"color":"#8b5cf6"},{"name":"BackgroundProvider.tsx","path":"src/components/BackgroundProvider.tsx","children":[],"color":"#8b5cf6"},{"name":"BusinessPartnersSection.tsx","path":"src/components/BusinessPartnersSection.tsx","children":[],"color":"#8b5cf6"},{"name":"FeaturedProductsSection.tsx","path":"src/components/FeaturedProductsSection.tsx","children":[],"color":"#8b5cf6"},{"name":"FooterSection.tsx","path":"src/components/FooterSection.tsx","children":[],"color":"#8b5cf6"},{"name":"Hero.tsx","path":"src/components/Hero.tsx","children":[],"color":"#8b5cf6"},{"name":"HeroSection.tsx","path":"src/components/HeroSection.tsx","children":[],"color":"#8b5cf6"},{"name":"Payment","path":"src/components/Payment","children":[{"name":"BarionPayment.tsx","path":"src/components/Payment/BarionPayment.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"ProductAccordion.tsx","path":"src/components/ProductAccordion.tsx","children":[],"color":"#8b5cf6"},{"name":"admin","path":"src/components/admin","children":[{"name":"AdminNav.tsx","path":"src/components/admin/AdminNav.tsx","children":[],"color":"#8b5cf6"},{"name":"HomepageEditor.tsx","path":"src/components/admin/HomepageEditor.tsx","children":[],"color":"#8b5cf6"},{"name":"ProductDescriptionSections.tsx","path":"src/components/admin/ProductDescriptionSections.tsx","children":[],"color":"#8b5cf6"},{"name":"ProductForm.tsx","path":"src/components/admin/ProductForm.tsx","children":[],"color":"#8b5cf6"},{"name":"ProductList.tsx","path":"src/components/admin/ProductList.tsx","children":[],"color":"#8b5cf6"},{"name":"shipping-methods","path":"src/components/admin/shipping-methods","children":[{"name":"ShippingMethodForm.tsx","path":"src/components/admin/shipping-methods/ShippingMethodForm.tsx","children":[],"color":"#8b5cf6"},{"name":"ShippingMethodList.tsx","path":"src/components/admin/shipping-methods/ShippingMethodList.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"cart","path":"src/components/cart","children":[{"name":"Cart.tsx","path":"src/components/cart/Cart.tsx","children":[],"color":"#8b5cf6"},{"name":"CartButton.tsx","path":"src/components/cart/CartButton.tsx","children":[],"color":"#8b5cf6"},{"name":"CartItem.tsx","path":"src/components/cart/CartItem.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"checkout","path":"src/components/checkout","children":[],"color":"#8b5cf6"},{"name":"dashboard","path":"src/components/dashboard","children":[{"name":"CommissionHistory.tsx","path":"src/components/dashboard/CommissionHistory.tsx","children":[],"color":"#8b5cf6"},{"name":"NetworkStats.tsx","path":"src/components/dashboard/NetworkStats.tsx","children":[],"color":"#8b5cf6"},{"name":"SalesChart.tsx","path":"src/components/dashboard/SalesChart.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"debug","path":"src/components/debug","children":[{"name":"RoleDebug.tsx","path":"src/components/debug/RoleDebug.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"landing-page.tsx","path":"src/components/landing-page.tsx","children":[],"color":"#8b5cf6"},{"name":"layout","path":"src/components/layout","children":[{"name":"Navbar.tsx","path":"src/components/layout/Navbar.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"navigation","path":"src/components/navigation","children":[{"name":"MobileMenu.tsx","path":"src/components/navigation/MobileMenu.tsx","children":[],"color":"#8b5cf6"},{"name":"Navbar.tsx","path":"src/components/navigation/Navbar.tsx","children":[],"color":"#8b5cf6"},{"name":"UserMenu.tsx","path":"src/components/navigation/UserMenu.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"network","path":"src/components/network","children":[{"name":"NetworkTree.tsx","path":"src/components/network/NetworkTree.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"orders","path":"src/components/orders","children":[{"name":"OrderDetails.tsx","path":"src/components/orders/OrderDetails.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"products","path":"src/components/products","children":[{"name":"AddToCartButton.tsx","path":"src/components/products/AddToCartButton.tsx","children":[],"color":"#8b5cf6"},{"name":"ProductCard.tsx","path":"src/components/products/ProductCard.tsx","children":[],"color":"#8b5cf6"},{"name":"ProductDetails.tsx","path":"src/components/products/ProductDetails.tsx","children":[],"color":"#8b5cf6"},{"name":"ProductFilters.tsx","path":"src/components/products/ProductFilters.tsx","children":[],"color":"#8b5cf6"},{"name":"ProductForm.tsx","path":"src/components/products/ProductForm.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"providers.tsx","path":"src/components/providers.tsx","children":[],"color":"#8b5cf6"},{"name":"ui","path":"src/components/ui","children":[{"name":"accordion.tsx","path":"src/components/ui/accordion.tsx","children":[],"color":"#8b5cf6"},{"name":"button.tsx","path":"src/components/ui/button.tsx","children":[],"color":"#8b5cf6"},{"name":"card.tsx","path":"src/components/ui/card.tsx","children":[],"color":"#8b5cf6"},{"name":"dialog.tsx","path":"src/components/ui/dialog.tsx","children":[],"color":"#8b5cf6"},{"name":"dropdown-menu.tsx","path":"src/components/ui/dropdown-menu.tsx","children":[],"color":"#8b5cf6"},{"name":"form.tsx","path":"src/components/ui/form.tsx","children":[],"color":"#8b5cf6"},{"name":"input.tsx","path":"src/components/ui/input.tsx","children":[],"color":"#8b5cf6"},{"name":"label.tsx","path":"src/components/ui/label.tsx","children":[],"color":"#8b5cf6"},{"name":"select.tsx","path":"src/components/ui/select.tsx","children":[],"color":"#8b5cf6"},{"name":"switch.tsx","path":"src/components/ui/switch.tsx","children":[],"color":"#8b5cf6"},{"name":"textarea.tsx","path":"src/components/ui/textarea.tsx","children":[],"color":"#8b5cf6"},{"name":"toaster.tsx","path":"src/components/ui/toaster.tsx","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"hooks","path":"src/hooks","children":[{"name":"useDiscount.ts","path":"src/hooks/useDiscount.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"lib","path":"src/lib","children":[{"name":"auth","path":"src/lib/auth","children":[{"name":"AuthContext.tsx","path":"src/lib/auth/AuthContext.tsx","children":[],"color":"#8b5cf6"},{"name":"Provider.tsx","path":"src/lib/auth/Provider.tsx","children":[],"color":"#8b5cf6"},{"name":"auth.ts","path":"src/lib/auth/auth.ts","children":[],"color":"#8b5cf6"},{"name":"authOptions.ts","path":"src/lib/auth/authOptions.ts","children":[],"color":"#8b5cf6"},{"name":"types.ts","path":"src/lib/auth/types.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"auth.ts","path":"src/lib/auth.ts","children":[],"color":"#8b5cf6"},{"name":"barion.ts","path":"src/lib/barion.ts","children":[],"color":"#8b5cf6"},{"name":"email.ts","path":"src/lib/email.ts","children":[],"color":"#8b5cf6"},{"name":"jwt.ts","path":"src/lib/jwt.ts","children":[],"color":"#8b5cf6"},{"name":"prisma.ts","path":"src/lib/prisma.ts","children":[],"color":"#8b5cf6"},{"name":"uploadthing.ts","path":"src/lib/uploadthing.ts","children":[],"color":"#8b5cf6"},{"name":"utils.ts","path":"src/lib/utils.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"middleware.ts","path":"src/middleware.ts","children":[],"color":"#8b5cf6"},{"name":"store","path":"src/store","children":[{"name":"cart.ts","path":"src/store/cart.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"types","path":"src/types","children":[{"name":"index.ts","path":"src/types/index.ts","children":[],"color":"#8b5cf6"},{"name":"next-auth.d.ts","path":"src/types/next-auth.d.ts","children":[],"color":"#8b5cf6"},{"name":"prisma.d.ts","path":"src/types/prisma.d.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"utils","path":"src/utils","children":[{"name":"uploadthing.ts","path":"src/utils/uploadthing.ts","children":[],"color":"#8b5cf6"}],"color":"#8b5cf6"}],"color":"#8b5cf6"},{"name":"tailwind.config.js","path":"tailwind.config.js","children":[],"color":"#f59e0b"},{"name":"tailwind.config.ts","path":"tailwind.config.ts","children":[],"color":"#f59e0b"},{"name":"tsconfig.json","path":"tsconfig.json","children":[],"color":"#f59e0b"},{"name":"update-order.js","path":"update-order.js","children":[],"color":"#64748b"}],"color":"#6366f1"};
+    console.log("Data loaded:", data);
+    
+    // Set up the dimensions and margins
+    const margin = {top: 80, right: 120, bottom: 80, left: 120};
+    const width = window.innerWidth - margin.left - margin.right;
+    const height = window.innerHeight - margin.top - margin.bottom;
+    
+    // Create a SVG container
+    const svg = d3.select("#tree-container")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom);
+      
+    const g = svg.append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
+    // Create a zoom behavior
+    const zoom = d3.zoom()
+      .scaleExtent([0.1, 4])
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform);
+      });
+    
+    svg.call(zoom);
+    
+    // Create a tree layout
+    const tree = d3.tree()
+      .size([height, width - 160]);
+    
+    // Convert the data into a hierarchy
+    const root = d3.hierarchy(data);
+    console.log("Hierarchy created:", root);
+    
+    // Initial position of the root node
+    root.x0 = height / 2;
+    root.y0 = 0;
+    
+    // Initialize the counter for generating unique IDs
+    let i = 0;
+    
+    // Collapse all nodes initially except the root
+    if (root.children) {
+      root.children.forEach(collapse);
+    }
+    
+    // Initial update to render the tree
+    update(root);
+    
+    // Function to collapse a node
+    function collapse(d) {
+      if (d.children) {
+        d._children = d.children;
+        d._children.forEach(collapse);
+        d.children = null;
+      }
+    }
+    
+    // Function to update the tree
+    function update(source) {
+      console.log("Updating tree from source:", source);
+      
+      // Compute the new tree layout
+      const treeData = tree(root);
+      
+      // Get the nodes and links from the hierarchy
+      const nodes = treeData.descendants();
+      const links = treeData.links();
+      
+      console.log("Nodes count:", nodes.length);
+      console.log("Links count:", links.length);
+      
+      // Normalize for fixed-depth
+      nodes.forEach(d => {
+        d.y = d.depth * 180;
+      });
+      
+      // Update the nodes
+      const node = g.selectAll(".node")
+        .data(nodes, d => d.id || (d.id = ++i));
+      
+      // Enter new nodes at the parent's previous position
+      const nodeEnter = node.enter().append("g")
+        .attr("class", "node")
+        .attr("transform", d => "translate(" + source.y0 + "," + source.x0 + ")")
+        .on("click", function(event, d) {
+          // Toggle children on click
+          if (d.children) {
+            d._children = d.children;
+            d.children = null;
+          } else {
+            d.children = d._children;
+            d._children = null;
+          }
+          update(d);
+        })
+        .on("mouseover", function(event, d) {
+          const tooltip = d3.select("#tooltip");
+          tooltip.style("display", "block")
+            .style("left", (event.pageX + 15) + "px")
+            .style("top", (event.pageY - 30) + "px")
+            .html("<strong>" + d.data.name + "</strong><br/>Path: " + d.data.path);
+        })
+        .on("mouseout", function() {
+          d3.select("#tooltip").style("display", "none");
+        });
+      
+      // Add Circle for the nodes
+      nodeEnter.append("circle")
+        .attr("r", 6)
+        .style("fill", d => d._children ? d.data.color : "#fff")
+        .style("stroke", d => d.data.color);
+      
+      // Add labels for the nodes
+      nodeEnter.append("text")
+        .attr("dy", ".35em")
+        .attr("x", d => d.children || d._children ? -13 : 13)
+        .attr("text-anchor", d => d.children || d._children ? "end" : "start")
+        .text(d => d.data.name);
+      
+      // Update the node attributes
+      const nodeUpdate = nodeEnter.merge(node);
+      
+      nodeUpdate.transition()
+        .duration(750)
+        .attr("transform", d => "translate(" + d.y + "," + d.x + ")");
+      
+      // Update the node attributes and style
+      nodeUpdate.select("circle")
+        .attr("r", 6)
+        .style("fill", d => d._children ? d.data.color : "#fff")
+        .style("stroke", d => d.data.color);
+      
+      // Remove any exiting nodes
+      const nodeExit = node.exit().transition()
+        .duration(750)
+        .attr("transform", d => "translate(" + source.y + "," + source.x + ")")
+        .remove();
+      
+      // On exit reduce the node circles size to 0
+      nodeExit.select("circle")
+        .attr("r", 1e-6);
+      
+      // On exit reduce the opacity of text labels
+      nodeExit.select("text")
+        .style("fill-opacity", 1e-6);
+      
+      // Update the links
+      const link = g.selectAll(".link")
+        .data(links, d => d.target.id);
+      
+      // Enter any new links at the parent's previous position
+      const linkEnter = link.enter().insert("path", "g")
+        .attr("class", "link")
+        .attr("d", d => {
+          const o = {x: source.x0, y: source.y0};
+          return diagonal(o, o);
+        });
+      
+      // Update links
+      linkEnter.merge(link).transition()
+        .duration(750)
+        .attr("d", d => diagonal(d.source, d.target));
+      
+      // Remove any exiting links
+      link.exit().transition()
+        .duration(750)
+        .attr("d", d => {
+          const o = {x: source.x, y: source.y};
+          return diagonal(o, o);
+        })
+        .remove();
+      
+      // Store the old positions for transition
+      nodes.forEach(d => {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
+      
+      // Creates a curved (diagonal) path from parent to the child nodes
+      function diagonal(s, d) {
+        return `M ${s.y} ${s.x}
+                C ${(s.y + d.y) / 2} ${s.x},
+                  ${(s.y + d.y) / 2} ${d.x},
+                  ${d.y} ${d.x}`;
+      }
+    }
+    
+    // Handle control buttons
+    document.getElementById('expandAll').addEventListener('click', () => {
+      expandAll(root);
+      update(root);
+    });
+    
+    document.getElementById('collapseAll').addEventListener('click', () => {
+      if (root.children) {
+        root.children.forEach(collapse);
+        update(root);
+      }
+    });
+    
+    document.getElementById('resetZoom').addEventListener('click', () => {
+      svg.transition().duration(750).call(
+        zoom.transform,
+        d3.zoomIdentity.translate(margin.left, margin.top)
+      );
+    });
+    
+    function expandAll(d) {
+      if (d._children) {
+        d.children = d._children;
+        d._children = null;
+      }
+      if (d.children) d.children.forEach(expandAll);
+    }
+    
+    // Center the view initially
+    svg.call(
+      zoom.transform,
+      d3.zoomIdentity.translate(margin.left, margin.top)
+    );
+    
+    console.log("D3 visualization script completed");
+  </script>
+</body>
+</html>
+  

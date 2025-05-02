@@ -1,0 +1,1761 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movaga Project Structure</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f8fafc;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+    }
+    h1 {
+      color: #1e293b;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .tree-container {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px;
+      max-height: 80vh;
+      overflow: auto;
+    }
+    .node {
+      margin: 2px 0;
+    }
+    .node-content {
+      display: flex;
+      align-items: center;
+      padding: 5px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .node-content:hover {
+      background-color: #f1f5f9;
+    }
+    .icon {
+      width: 18px;
+      height: 18px;
+      display: inline-block;
+      border-radius: 3px;
+      margin-right: 8px;
+      position: relative;
+    }
+    .icon.folder:after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px;
+      height: 8px;
+      background-color: rgba(255, 255, 255, 0.7);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z'%3E%3C/path%3E%3C/svg%3E") no-repeat center center / contain;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z'%3E%3C/path%3E%3C/svg%3E") no-repeat center center / contain;
+    }
+    .icon.file:after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px;
+      height: 10px;
+      background-color: rgba(255, 255, 255, 0.7);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3C/svg%3E") no-repeat center center / contain;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3C/svg%3E") no-repeat center center / contain;
+    }
+    .name {
+      font-size: 14px;
+      margin-right: 10px;
+      white-space: nowrap;
+    }
+    .path {
+      font-size: 12px;
+      color: #64748b;
+      margin-left: auto;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background-color: #f8fafc;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+    }
+    .legend-color {
+      width: 15px;
+      height: 15px;
+      border-radius: 3px;
+      margin-right: 8px;
+    }
+    .legend-label {
+      font-size: 13px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    button {
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background-color: #4338ca;
+    }
+    .search-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .search-container input {
+      flex-grow: 1;
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .filtered-out {
+      display: none !important;
+    }
+    .highlight {
+      background-color: #fef3c7;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Movaga Project Structure</h1>
+    
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="Search files and directories..." />
+      <button onclick="searchStructure()">Search</button>
+      <button onclick="resetSearch()">Reset</button>
+    </div>
+    
+    <div class="controls">
+      <button onclick="expandAll()">Expand All</button>
+      <button onclick="collapseAll()">Collapse All</button>
+    </div>
+    
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #6366f1;"></div>
+        <div class="legend-label">Project Root</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #8b5cf6;"></div>
+        <div class="legend-label">Source Directory</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #ec4899;"></div>
+        <div class="legend-label">App Directory</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #f97316;"></div>
+        <div class="legend-label">Components Directory</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #14b8a6;"></div>
+        <div class="legend-label">Library Directory</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #f59e0b;"></div>
+        <div class="legend-label">Config File</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #3b82f6;"></div>
+        <div class="legend-label">Regular Directory</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #64748b;"></div>
+        <div class="legend-label">Regular File</div>
+      </div>
+    </div>
+    
+    <div class="tree-container">
+      <div class="node" style="padding-left: 0px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #6366f1;"></span>
+      <span class="name">.</span>
+      <span class="path">.</span>
+    </div><div class="children" ><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">backup_api_folders</span>
+      <span class="path">backup_api_folders</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">[productId]</span>
+      <span class="path">backup_api_folders/[productId]</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">backup_api_folders/[productId]/route.ts</span>
+    </div></div></div></div></div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">prisma</span>
+      <span class="path">prisma</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">migrations</span>
+      <span class="path">prisma/migrations</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">20250330172655_init</span>
+      <span class="path">prisma/migrations/20250330172655_init</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">migration.sql</span>
+      <span class="path">prisma/migrations/20250330172655_init/migration.sql</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">20250330175003_add_orders</span>
+      <span class="path">prisma/migrations/20250330175003_add_orders</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">migration.sql</span>
+      <span class="path">prisma/migrations/20250330175003_add_orders/migration.sql</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">20250331152549_add_order_models</span>
+      <span class="path">prisma/migrations/20250331152549_add_order_models</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">migration.sql</span>
+      <span class="path">prisma/migrations/20250331152549_add_order_models/migration.sql</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">20250331154225_add_order_fields</span>
+      <span class="path">prisma/migrations/20250331154225_add_order_fields</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">migration.sql</span>
+      <span class="path">prisma/migrations/20250331154225_add_order_fields/migration.sql</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">20250331155459_add_order_status_enum</span>
+      <span class="path">prisma/migrations/20250331155459_add_order_status_enum</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">migration.sql</span>
+      <span class="path">prisma/migrations/20250331155459_add_order_status_enum/migration.sql</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">20250427152346_add_shipping_methods</span>
+      <span class="path">prisma/migrations/20250427152346_add_shipping_methods</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">migration.sql</span>
+      <span class="path">prisma/migrations/20250427152346_add_shipping_methods/migration.sql</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">20250427153722_add_shipping_method_id_to_order</span>
+      <span class="path">prisma/migrations/20250427153722_add_shipping_method_id_to_order</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">migration.sql</span>
+      <span class="path">prisma/migrations/20250427153722_add_shipping_method_id_to_order/migration.sql</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">20250427154619_remove_shipping_method_id_from_order</span>
+      <span class="path">prisma/migrations/20250427154619_remove_shipping_method_id_from_order</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">migration.sql</span>
+      <span class="path">prisma/migrations/20250427154619_remove_shipping_method_id_from_order/migration.sql</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">20250427173132_add_description_sections</span>
+      <span class="path">prisma/migrations/20250427173132_add_description_sections</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">migration.sql</span>
+      <span class="path">prisma/migrations/20250427173132_add_description_sections/migration.sql</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">20250501081319_add_guest_orders</span>
+      <span class="path">prisma/migrations/20250501081319_add_guest_orders</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">migration.sql</span>
+      <span class="path">prisma/migrations/20250501081319_add_guest_orders/migration.sql</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">20250501084405_optional_user_id_for_orders</span>
+      <span class="path">prisma/migrations/20250501084405_optional_user_id_for_orders</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">migration.sql</span>
+      <span class="path">prisma/migrations/20250501084405_optional_user_id_for_orders/migration.sql</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">20250501150310_add_barion_payment_id</span>
+      <span class="path">prisma/migrations/20250501150310_add_barion_payment_id</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">migration.sql</span>
+      <span class="path">prisma/migrations/20250501150310_add_barion_payment_id/migration.sql</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">migration_lock.toml</span>
+      <span class="path">prisma/migrations/migration_lock.toml</span>
+    </div></div></div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">schema.prisma</span>
+      <span class="path">prisma/schema.prisma</span>
+    </div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">seed.ts</span>
+      <span class="path">prisma/seed.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">public</span>
+      <span class="path">public</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">uploads</span>
+      <span class="path">public/uploads</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">homepage</span>
+      <span class="path">public/uploads/homepage</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">background-1745766484370-1745649449837-ChatGPTImageApr262025082644AM.png</span>
+      <span class="path">public/uploads/homepage/background-1745766484370-1745649449837-ChatGPTImageApr262025082644AM.png</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">heroBackground-1745767117213-hero-bg.jpg</span>
+      <span class="path">public/uploads/homepage/heroBackground-1745767117213-hero-bg.jpg</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">pageBackground-1745767133705-background.jpg</span>
+      <span class="path">public/uploads/homepage/pageBackground-1745767133705-background.jpg</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">settings.json</span>
+      <span class="path">public/uploads/homepage/settings.json</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">products</span>
+      <span class="path">public/uploads/products</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1743424176888-Mindcontrol1.jpg</span>
+      <span class="path">public/uploads/products/1743424176888-Mindcontrol1.jpg</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1743426485612-Mindcontrol1.jpg</span>
+      <span class="path">public/uploads/products/1743426485612-Mindcontrol1.jpg</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1743426542938-VitaminDailyProtectFinal.jpg</span>
+      <span class="path">public/uploads/products/1743426542938-VitaminDailyProtectFinal.jpg</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1745648817447-ChatGPTImageApr262025082644AM.png</span>
+      <span class="path">public/uploads/products/1745648817447-ChatGPTImageApr262025082644AM.png</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1745649449837-ChatGPTImageApr262025082644AM.png</span>
+      <span class="path">public/uploads/products/1745649449837-ChatGPTImageApr262025082644AM.png</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1745667379749-1743426485612-Mindcontrol1.jpg</span>
+      <span class="path">public/uploads/products/1745667379749-1743426485612-Mindcontrol1.jpg</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1745667515149-1743424176888-Mindcontrol1.jpg</span>
+      <span class="path">public/uploads/products/1745667515149-1743424176888-Mindcontrol1.jpg</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1745676705505-1743424176888-Mindcontrol1.jpg</span>
+      <span class="path">public/uploads/products/1745676705505-1743424176888-Mindcontrol1.jpg</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1745761563090-1743424176888-Mindcontrol1.jpg</span>
+      <span class="path">public/uploads/products/1745761563090-1743424176888-Mindcontrol1.jpg</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1745762840725-1743424176888-Mindcontrol1.jpg</span>
+      <span class="path">public/uploads/products/1745762840725-1743424176888-Mindcontrol1.jpg</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1745775020897-1743426542938-VitaminDailyProtectFinal.jpg</span>
+      <span class="path">public/uploads/products/1745775020897-1743426542938-VitaminDailyProtectFinal.jpg</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1745775255789-1743424176888-Mindcontrol1.jpg</span>
+      <span class="path">public/uploads/products/1745775255789-1743424176888-Mindcontrol1.jpg</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1745817906767-1743424176888-Mindcontrol1.jpg</span>
+      <span class="path">public/uploads/products/1745817906767-1743424176888-Mindcontrol1.jpg</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1746088681396-1743424176888-Mindcontrol1.jpg</span>
+      <span class="path">public/uploads/products/1746088681396-1743424176888-Mindcontrol1.jpg</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">1746110349107-1743426485612-Mindcontrol1.jpg</span>
+      <span class="path">public/uploads/products/1746110349107-1743426485612-Mindcontrol1.jpg</span>
+    </div></div></div></div></div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">background.jpg</span>
+      <span class="path">public/background.jpg</span>
+    </div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">ChatGPT Image 2025. ápr. 26. 14_55_53.png</span>
+      <span class="path">public/ChatGPT Image 2025. ápr. 26. 14_55_53.png</span>
+    </div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">Color logo with background.svg</span>
+      <span class="path">public/Color logo with background.svg</span>
+    </div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">d3-structure.html</span>
+      <span class="path">public/d3-structure.html</span>
+    </div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">hero-bg.jpg</span>
+      <span class="path">public/hero-bg.jpg</span>
+    </div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">placeholder.png</span>
+      <span class="path">public/placeholder.png</span>
+    </div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">project-structure.html</span>
+      <span class="path">public/project-structure.html</span>
+    </div></div></div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #3b82f6;"></span>
+      <span class="name">scripts</span>
+      <span class="path">scripts</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">build.ps1</span>
+      <span class="path">scripts/build.ps1</span>
+    </div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">create-admin.ts</span>
+      <span class="path">scripts/create-admin.ts</span>
+    </div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">dev.ps1</span>
+      <span class="path">scripts/dev.ps1</span>
+    </div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">project-structure-d3.js</span>
+      <span class="path">scripts/project-structure-d3.js</span>
+    </div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">project-structure-html.js</span>
+      <span class="path">scripts/project-structure-html.js</span>
+    </div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">project-structure-visualizer.js</span>
+      <span class="path">scripts/project-structure-visualizer.js</span>
+    </div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">README.md</span>
+      <span class="path">scripts/README.md</span>
+    </div></div></div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">src</span>
+      <span class="path">src</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">app</span>
+      <span class="path">src/app</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">admin</span>
+      <span class="path">src/app/admin</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">categories</span>
+      <span class="path">src/app/admin/categories</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/admin/categories/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">homepage</span>
+      <span class="path">src/app/admin/homepage</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/admin/homepage/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">orders</span>
+      <span class="path">src/app/admin/orders</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/admin/orders/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">product-management</span>
+      <span class="path">src/app/admin/product-management</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">edit</span>
+      <span class="path">src/app/admin/product-management/edit</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">[id]</span>
+      <span class="path">src/app/admin/product-management/edit/[id]</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 140px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/admin/product-management/edit/[id]/page.tsx</span>
+    </div></div></div></div></div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/admin/product-management/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">shipping-methods</span>
+      <span class="path">src/app/admin/shipping-methods</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/admin/shipping-methods/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">layout.tsx</span>
+      <span class="path">src/app/admin/layout.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/admin/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">api</span>
+      <span class="path">src/app/api</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">admin</span>
+      <span class="path">src/app/api/admin</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">homepage</span>
+      <span class="path">src/app/api/admin/homepage</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/admin/homepage/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">orders</span>
+      <span class="path">src/app/api/admin/orders</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">[orderId]</span>
+      <span class="path">src/app/api/admin/orders/[orderId]</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 140px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/admin/orders/[orderId]/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/admin/orders/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">shipping-methods</span>
+      <span class="path">src/app/api/admin/shipping-methods</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">[id]</span>
+      <span class="path">src/app/api/admin/shipping-methods/[id]</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 140px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/admin/shipping-methods/[id]/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/admin/shipping-methods/route.ts</span>
+    </div></div></div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">auth</span>
+      <span class="path">src/app/api/auth</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">[...nextauth]</span>
+      <span class="path">src/app/api/auth/[...nextauth]</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/auth/[...nextauth]/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/auth/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">cart</span>
+      <span class="path">src/app/api/cart</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/cart/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">categories</span>
+      <span class="path">src/app/api/categories</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">[id]</span>
+      <span class="path">src/app/api/categories/[id]</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/categories/[id]/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/categories/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">orders</span>
+      <span class="path">src/app/api/orders</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">[orderId]</span>
+      <span class="path">src/app/api/orders/[orderId]</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/orders/[orderId]/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/orders/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">payment</span>
+      <span class="path">src/app/api/payment</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">callback</span>
+      <span class="path">src/app/api/payment/callback</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/payment/callback/route.ts</span>
+    </div></div></div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">products</span>
+      <span class="path">src/app/api/products</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">[id]</span>
+      <span class="path">src/app/api/products/[id]</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/products/[id]/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">[id]_backup</span>
+      <span class="path">src/app/api/products/[id]_backup</span>
+    </div><div class="children" style="display: none;"></div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/products/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">shipping-methods</span>
+      <span class="path">src/app/api/shipping-methods</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/shipping-methods/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">upload</span>
+      <span class="path">src/app/api/upload</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/upload/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">uploadthing</span>
+      <span class="path">src/app/api/uploadthing</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">core.ts</span>
+      <span class="path">src/app/api/uploadthing/core.ts</span>
+    </div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/uploadthing/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">users</span>
+      <span class="path">src/app/api/users</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">addresses</span>
+      <span class="path">src/app/api/users/addresses</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/users/addresses/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">current</span>
+      <span class="path">src/app/api/users/current</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/users/current/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">network</span>
+      <span class="path">src/app/api/users/network</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/users/network/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">orders</span>
+      <span class="path">src/app/api/users/orders</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/users/orders/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">profile</span>
+      <span class="path">src/app/api/users/profile</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/users/profile/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">stats</span>
+      <span class="path">src/app/api/users/stats</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 120px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/users/stats/route.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">route.ts</span>
+      <span class="path">src/app/api/users/route.ts</span>
+    </div></div></div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">auth</span>
+      <span class="path">src/app/auth</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">login</span>
+      <span class="path">src/app/auth/login</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/auth/login/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">register</span>
+      <span class="path">src/app/auth/register</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/auth/register/page.tsx</span>
+    </div></div></div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">cart</span>
+      <span class="path">src/app/cart</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/cart/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">checkout</span>
+      <span class="path">src/app/checkout</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/checkout/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">dashboard</span>
+      <span class="path">src/app/dashboard</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/dashboard/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">network</span>
+      <span class="path">src/app/network</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/network/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">orders</span>
+      <span class="path">src/app/orders</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">[orderId]</span>
+      <span class="path">src/app/orders/[orderId]</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/orders/[orderId]/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/orders/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">payment</span>
+      <span class="path">src/app/payment</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">success</span>
+      <span class="path">src/app/payment/success</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/payment/success/page.tsx</span>
+    </div></div></div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">payment-test</span>
+      <span class="path">src/app/payment-test</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/payment-test/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">products</span>
+      <span class="path">src/app/products</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">[id]</span>
+      <span class="path">src/app/products/[id]</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/products/[id]/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/products/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">profile</span>
+      <span class="path">src/app/profile</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">orders</span>
+      <span class="path">src/app/profile/orders</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/profile/orders/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/profile/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">superadmin</span>
+      <span class="path">src/app/superadmin</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">layout.tsx</span>
+      <span class="path">src/app/superadmin/layout.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">thank-you</span>
+      <span class="path">src/app/thank-you</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/thank-you/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">globals.css</span>
+      <span class="path">src/app/globals.css</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">layout.tsx</span>
+      <span class="path">src/app/layout.tsx</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">page.tsx</span>
+      <span class="path">src/app/page.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">components</span>
+      <span class="path">src/components</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">admin</span>
+      <span class="path">src/components/admin</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">shipping-methods</span>
+      <span class="path">src/components/admin/shipping-methods</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">ShippingMethodForm.tsx</span>
+      <span class="path">src/components/admin/shipping-methods/ShippingMethodForm.tsx</span>
+    </div></div><div class="node" style="padding-left: 100px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">ShippingMethodList.tsx</span>
+      <span class="path">src/components/admin/shipping-methods/ShippingMethodList.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">AdminNav.tsx</span>
+      <span class="path">src/components/admin/AdminNav.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">HomepageEditor.tsx</span>
+      <span class="path">src/components/admin/HomepageEditor.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">ProductDescriptionSections.tsx</span>
+      <span class="path">src/components/admin/ProductDescriptionSections.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">ProductForm.tsx</span>
+      <span class="path">src/components/admin/ProductForm.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">ProductList.tsx</span>
+      <span class="path">src/components/admin/ProductList.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">cart</span>
+      <span class="path">src/components/cart</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">Cart.tsx</span>
+      <span class="path">src/components/cart/Cart.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">CartButton.tsx</span>
+      <span class="path">src/components/cart/CartButton.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">CartItem.tsx</span>
+      <span class="path">src/components/cart/CartItem.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">checkout</span>
+      <span class="path">src/components/checkout</span>
+    </div><div class="children" style="display: none;"></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">dashboard</span>
+      <span class="path">src/components/dashboard</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">CommissionHistory.tsx</span>
+      <span class="path">src/components/dashboard/CommissionHistory.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">NetworkStats.tsx</span>
+      <span class="path">src/components/dashboard/NetworkStats.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">SalesChart.tsx</span>
+      <span class="path">src/components/dashboard/SalesChart.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">debug</span>
+      <span class="path">src/components/debug</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">RoleDebug.tsx</span>
+      <span class="path">src/components/debug/RoleDebug.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">layout</span>
+      <span class="path">src/components/layout</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">Navbar.tsx</span>
+      <span class="path">src/components/layout/Navbar.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">navigation</span>
+      <span class="path">src/components/navigation</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">MobileMenu.tsx</span>
+      <span class="path">src/components/navigation/MobileMenu.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">Navbar.tsx</span>
+      <span class="path">src/components/navigation/Navbar.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">UserMenu.tsx</span>
+      <span class="path">src/components/navigation/UserMenu.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">network</span>
+      <span class="path">src/components/network</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">NetworkTree.tsx</span>
+      <span class="path">src/components/network/NetworkTree.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">orders</span>
+      <span class="path">src/components/orders</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">OrderDetails.tsx</span>
+      <span class="path">src/components/orders/OrderDetails.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">Payment</span>
+      <span class="path">src/components/Payment</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">BarionPayment.tsx</span>
+      <span class="path">src/components/Payment/BarionPayment.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">products</span>
+      <span class="path">src/components/products</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">AddToCartButton.tsx</span>
+      <span class="path">src/components/products/AddToCartButton.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">ProductCard.tsx</span>
+      <span class="path">src/components/products/ProductCard.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">ProductDetails.tsx</span>
+      <span class="path">src/components/products/ProductDetails.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">ProductFilters.tsx</span>
+      <span class="path">src/components/products/ProductFilters.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">ProductForm.tsx</span>
+      <span class="path">src/components/products/ProductForm.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">ui</span>
+      <span class="path">src/components/ui</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">accordion.tsx</span>
+      <span class="path">src/components/ui/accordion.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">button.tsx</span>
+      <span class="path">src/components/ui/button.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">card.tsx</span>
+      <span class="path">src/components/ui/card.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">dialog.tsx</span>
+      <span class="path">src/components/ui/dialog.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">dropdown-menu.tsx</span>
+      <span class="path">src/components/ui/dropdown-menu.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">form.tsx</span>
+      <span class="path">src/components/ui/form.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">input.tsx</span>
+      <span class="path">src/components/ui/input.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">label.tsx</span>
+      <span class="path">src/components/ui/label.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">select.tsx</span>
+      <span class="path">src/components/ui/select.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">switch.tsx</span>
+      <span class="path">src/components/ui/switch.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">textarea.tsx</span>
+      <span class="path">src/components/ui/textarea.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">toaster.tsx</span>
+      <span class="path">src/components/ui/toaster.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">AboutUsSection.tsx</span>
+      <span class="path">src/components/AboutUsSection.tsx</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">BackgroundProvider.tsx</span>
+      <span class="path">src/components/BackgroundProvider.tsx</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">BusinessPartnersSection.tsx</span>
+      <span class="path">src/components/BusinessPartnersSection.tsx</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">FeaturedProductsSection.tsx</span>
+      <span class="path">src/components/FeaturedProductsSection.tsx</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">FooterSection.tsx</span>
+      <span class="path">src/components/FooterSection.tsx</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">Hero.tsx</span>
+      <span class="path">src/components/Hero.tsx</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">HeroSection.tsx</span>
+      <span class="path">src/components/HeroSection.tsx</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">landing-page.tsx</span>
+      <span class="path">src/components/landing-page.tsx</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">ProductAccordion.tsx</span>
+      <span class="path">src/components/ProductAccordion.tsx</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">providers.tsx</span>
+      <span class="path">src/components/providers.tsx</span>
+    </div></div></div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">hooks</span>
+      <span class="path">src/hooks</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">useDiscount.ts</span>
+      <span class="path">src/hooks/useDiscount.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">lib</span>
+      <span class="path">src/lib</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">auth</span>
+      <span class="path">src/lib/auth</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">auth.ts</span>
+      <span class="path">src/lib/auth/auth.ts</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">AuthContext.tsx</span>
+      <span class="path">src/lib/auth/AuthContext.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">authOptions.ts</span>
+      <span class="path">src/lib/auth/authOptions.ts</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">Provider.tsx</span>
+      <span class="path">src/lib/auth/Provider.tsx</span>
+    </div></div><div class="node" style="padding-left: 80px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">types.ts</span>
+      <span class="path">src/lib/auth/types.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">auth.ts</span>
+      <span class="path">src/lib/auth.ts</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">barion.ts</span>
+      <span class="path">src/lib/barion.ts</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">email.ts</span>
+      <span class="path">src/lib/email.ts</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">jwt.ts</span>
+      <span class="path">src/lib/jwt.ts</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">prisma.ts</span>
+      <span class="path">src/lib/prisma.ts</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">uploadthing.ts</span>
+      <span class="path">src/lib/uploadthing.ts</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">utils.ts</span>
+      <span class="path">src/lib/utils.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">store</span>
+      <span class="path">src/store</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">cart.ts</span>
+      <span class="path">src/store/cart.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">types</span>
+      <span class="path">src/types</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">index.ts</span>
+      <span class="path">src/types/index.ts</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">next-auth.d.ts</span>
+      <span class="path">src/types/next-auth.d.ts</span>
+    </div></div><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">prisma.d.ts</span>
+      <span class="path">src/types/prisma.d.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="true">
+      <span class="icon folder" style="background-color: #8b5cf6;"></span>
+      <span class="name">utils</span>
+      <span class="path">src/utils</span>
+    </div><div class="children" style="display: none;"><div class="node" style="padding-left: 60px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">uploadthing.ts</span>
+      <span class="path">src/utils/uploadthing.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 40px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #8b5cf6;"></span>
+      <span class="name">middleware.ts</span>
+      <span class="path">src/middleware.ts</span>
+    </div></div></div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">.dockerignore</span>
+      <span class="path">.dockerignore</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">.env</span>
+      <span class="path">.env</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">.env.local</span>
+      <span class="path">.env.local</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">.gitignore</span>
+      <span class="path">.gitignore</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">check-orders.js</span>
+      <span class="path">check-orders.js</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">components.json</span>
+      <span class="path">components.json</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">docker-compose.yml</span>
+      <span class="path">docker-compose.yml</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">Dockerfile</span>
+      <span class="path">Dockerfile</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">entrypoint.sh</span>
+      <span class="path">entrypoint.sh</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">movaga@0.1.0</span>
+      <span class="path">movaga@0.1.0</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">movga_spec.md</span>
+      <span class="path">movga_spec.md</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">next</span>
+      <span class="path">next</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">next-env.d.ts</span>
+      <span class="path">next-env.d.ts</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #f59e0b;"></span>
+      <span class="name">next.config.js</span>
+      <span class="path">next.config.js</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">package-lock.json</span>
+      <span class="path">package-lock.json</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #f59e0b;"></span>
+      <span class="name">package.json</span>
+      <span class="path">package.json</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #f59e0b;"></span>
+      <span class="name">postcss.config.js</span>
+      <span class="path">postcss.config.js</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">progress.md</span>
+      <span class="path">progress.md</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">prompt.txt</span>
+      <span class="path">prompt.txt</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #f59e0b;"></span>
+      <span class="name">tailwind.config.js</span>
+      <span class="path">tailwind.config.js</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #f59e0b;"></span>
+      <span class="name">tailwind.config.ts</span>
+      <span class="path">tailwind.config.ts</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #f59e0b;"></span>
+      <span class="name">tsconfig.json</span>
+      <span class="path">tsconfig.json</span>
+    </div></div><div class="node" style="padding-left: 20px;">
+    <div class="node-content" onclick="toggleFolder(this)" data-is-folder="false">
+      <span class="icon file" style="background-color: #64748b;"></span>
+      <span class="name">update-order.js</span>
+      <span class="path">update-order.js</span>
+    </div></div></div></div>
+    </div>
+  </div>
+  
+  <script>
+    // Toggle folder expansion
+    function toggleFolder(element) {
+      const isFolder = element.getAttribute('data-is-folder') === 'true';
+      if (isFolder) {
+        const children = element.parentNode.querySelector('.children');
+        if (children) {
+          children.style.display = children.style.display === 'none' ? 'block' : 'none';
+        }
+      }
+    }
+    
+    // Expand all folders
+    function expandAll() {
+      document.querySelectorAll('.children').forEach(el => {
+        el.style.display = 'block';
+      });
+    }
+    
+    // Collapse all folders
+    function collapseAll() {
+      document.querySelectorAll('.children').forEach((el, index) => {
+        // Keep the root level expanded
+        if (index > 0) {
+          el.style.display = 'none';
+        }
+      });
+    }
+    
+    // Search functionality
+    function searchStructure() {
+      resetSearch(); // Clear previous search
+      
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      if (!searchTerm) return;
+      
+      const nodes = document.querySelectorAll('.node-content');
+      let hasMatch = false;
+      
+      nodes.forEach(node => {
+        const name = node.querySelector('.name').textContent.toLowerCase();
+        const path = node.querySelector('.path').textContent.toLowerCase();
+        
+        if (name.includes(searchTerm) || path.includes(searchTerm)) {
+          // Highlight this node
+          if (name.includes(searchTerm)) {
+            const nameEl = node.querySelector('.name');
+            nameEl.innerHTML = nameEl.textContent.replace(
+              new RegExp(searchTerm, 'gi'),
+              match => `<span class="highlight">${match}</span>`
+            );
+          }
+          
+          // Ensure this node and all its parents are visible
+          let current = node;
+          while (current) {
+            if (current.classList.contains('children')) {
+              current.style.display = 'block';
+            }
+            current = current.parentElement;
+          }
+          
+          hasMatch = true;
+        }
+      });
+      
+      if (!hasMatch) {
+        alert('No matches found for: ' + searchTerm);
+      }
+    }
+    
+    // Reset search
+    function resetSearch() {
+      // Remove all highlights
+      document.querySelectorAll('.highlight').forEach(el => {
+        const parent = el.parentNode;
+        parent.textContent = parent.textContent;
+      });
+      
+      // Reset the search input
+      document.getElementById('searchInput').value = '';
+      
+      // Show all nodes again
+      document.querySelectorAll('.node').forEach(el => {
+        el.classList.remove('filtered-out');
+      });
+    }
+    
+    // Add keyboard shortcut for search
+    document.addEventListener('keydown', function(event) {
+      // Ctrl+F or Cmd+F
+      if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
+        event.preventDefault();
+        document.getElementById('searchInput').focus();
+      }
+    });
+  </script>
+</body>
+</html>
+  

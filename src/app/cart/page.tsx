@@ -20,7 +20,7 @@ export default function CartPage() {
           </p>
           <Link
             href="/products"
-            className="inline-block rounded-lg bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+            className="inline-block rounded-lg bg-primary px-8 py-3 font-medium text-white transition-colors hover:bg-primary/90"
           >
             Vásárlás folytatása
           </Link>
@@ -57,14 +57,14 @@ export default function CartPage() {
               <div className="space-y-2">
                 <button
                   onClick={() => router.push('/checkout')}
-                  className="w-full rounded-lg bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+                  className="w-full rounded-lg bg-primary px-8 py-3 font-medium text-white transition-colors hover:bg-primary/90"
                 >
                   Tovább a megrendeléshez
                 </button>
                 
                 <button
                   onClick={clearCart}
-                  className="w-full rounded-lg border border-red-600 px-8 py-3 font-medium text-red-600 transition-colors hover:bg-red-50"
+                  className="w-full rounded-lg border border-destructive px-8 py-3 font-medium text-destructive transition-colors hover:bg-destructive/10"
                 >
                   Kosár ürítése
                 </button>

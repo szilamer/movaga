@@ -28,14 +28,14 @@ export function CartItem({ item }: CartItemProps) {
       <div className="flex flex-1 flex-col">
         <div className="flex justify-between">
           <div>
-            <h3 className="text-base font-medium text-gray-900">{item.name}</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <h3 className="text-base font-medium text-foreground">{item.name}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
               {hasDiscount ? (
                 <div className="flex items-center">
-                  <span className="font-medium text-gray-900">
+                  <span className="font-medium text-foreground">
                     {formatPrice(item.price)}
                   </span>
-                  <span className="ml-2 text-xs text-gray-500 line-through">
+                  <span className="ml-2 text-xs text-muted-foreground line-through">
                     {formatPrice(item.originalPrice!)}
                   </span>
                 </div>
@@ -58,7 +58,7 @@ export function CartItem({ item }: CartItemProps) {
             </select>
             <button
               onClick={() => removeItem(item.id)}
-              className="text-sm font-medium text-red-600 hover:text-red-500"
+              className="text-sm font-medium text-destructive hover:text-destructive/90"
             >
               Törlés
             </button>

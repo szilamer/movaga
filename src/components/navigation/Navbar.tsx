@@ -53,7 +53,7 @@ export default function Navbar() {
                       href="/admin/products"
                       className="inline-flex items-center px-1 pt-1 text-white hover:text-gold"
                     >
-                      Termékek kezelése
+                      Adminisztráció
                     </Link>
                   )}
                 </>

@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { ShippingMethod } from '@prisma/client'
 import { BarionService, BarionPaymentRequest } from '@/lib/barion'
+import Link from 'next/link'
 
 const PAYMENT_METHODS = {
   BARION: { name: 'Barion online fizetés', fee: 0 },
@@ -74,7 +75,8 @@ export default function CheckoutPage() {
   // Bejelentkezés ellenőrzése
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/auth/login?callbackUrl=/checkout')
+      // Vendég vásárlás esetén nem irányítunk át
+      return;
     }
   }, [status, router])
 
@@ -166,11 +168,31 @@ export default function CheckoutPage() {
     fetchShippingMethods()
   }, [])
 
-  // Ha nincs bejelentkezve vagy még töltődik, loading állapotot mutatunk
-  if (status === 'loading' || status === 'unauthenticated') {
+  // Ha nincs bejelentkezve, akkor is engedjük tovább
+  if (status === 'loading') {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    )
+  }
+
+  // Kosár ellenőrzése
+  if (items.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center">
+          <h1 className="mb-4 text-2xl font-bold">A kosár üres</h1>
+          <p className="mb-8 text-gray-600">
+            Még nem adtál hozzá termékeket a kosaradhoz.
+          </p>
+          <Link
+            href="/products"
+            className="inline-block rounded-lg bg-primary px-8 py-3 font-medium text-white transition-colors hover:bg-primary/90"
+          >
+            Vásárlás folytatása
+          </Link>
+        </div>
       </div>
     )
   }
@@ -250,6 +272,9 @@ export default function CheckoutPage() {
 
         const barionService = new BarionService(posKey, true);
         
+        // Generate a unique payment ID
+        const paymentRequestId = `PAY-${Date.now()}`;
+        
         const paymentRequest: BarionPaymentRequest = {
           POSKey: posKey,
           PaymentType: 'Immediate',
@@ -261,7 +286,7 @@ export default function CheckoutPage() {
           RecurrenceType: '',
           RecurrenceId: '',
           FundingSources: ['All'],
-          PaymentRequestId: `PAY-${Date.now()}`,
+          PaymentRequestId: paymentRequestId,
           PayerHint: '',
           CardHolderNameHint: '',
           Items: items.map(item => ({
@@ -325,6 +350,7 @@ export default function CheckoutPage() {
             shippingMethodId: selectedShippingMethod?.id,
             paymentMethod: PAYMENT_METHODS[paymentMethod].name,
             total: total,
+            barionPaymentId: paymentRequestId,
             
             // Szállítási cím
             shippingFullName: formData.shippingFullName,

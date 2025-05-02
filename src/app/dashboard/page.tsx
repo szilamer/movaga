@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import SalesChart from '@/components/dashboard/SalesChart'
 import NetworkStats from '@/components/dashboard/NetworkStats'
 import CommissionHistory from '@/components/dashboard/CommissionHistory'
+import OrderDetails from '@/components/orders/OrderDetails'
 
 interface DashboardData {
   monthlySales: number
@@ -48,7 +49,33 @@ export default function DashboardPage() {
     status: string
     createdAt: string
     total: number
-    items: Array<{ id: string; quantity: number; product: { name: string } }>
+    shippingMethod: string
+    paymentMethod: string
+    
+    // Szállítási cím
+    shippingFullName: string
+    shippingCountry: string
+    shippingCity: string
+    shippingAddress: string
+    shippingZipCode: string
+    shippingPhone?: string
+    
+    // Számlázási cím
+    billingFullName: string
+    billingCountry: string
+    billingCity: string
+    billingAddress: string
+    billingZipCode: string
+    billingPhone?: string
+    billingCompanyName?: string
+    billingTaxNumber?: string
+    
+    items: Array<{ 
+      id: string
+      quantity: number
+      price: number
+      product: { name: string } 
+    }>
   }
   const [orders, setOrders] = useState<OrderType[]>([])
   const [ordersLoading, setOrdersLoading] = useState(true)
@@ -183,7 +210,8 @@ export default function DashboardPage() {
             commissions={dashboardData.commissionHistory}
             totalCommission={dashboardData.totalCommission}
           />
-          {/* Rendelések lista */}
+          
+          {/* Rendelések lista - új OrderDetails komponenssel */}
           <div className="col-span-1 lg:col-span-2 bg-background border-border text-foreground p-6 rounded-lg shadow mt-8">
             <h3 className="text-lg font-medium mb-4">Rendeléseim és hálózati tagok rendelései</h3>
             {ordersLoading ? (
@@ -193,43 +221,14 @@ export default function DashboardPage() {
             ) : orders.length === 0 ? (
               <p>Nincsenek megjeleníthető rendelések.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-border">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-sm font-semibold">Azonosító</th>
-                      <th className="px-4 py-2 text-left text-sm font-semibold">Dátum</th>
-                      <th className="px-4 py-2 text-left text-sm font-semibold">Termékek</th>
-                      <th className="px-4 py-2 text-left text-sm font-semibold">Összeg</th>
-                      <th className="px-4 py-2 text-left text-sm font-semibold">Státusz</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-background divide-y divide-border">
-                    {orders.map(order => (
-                      <tr key={order.id}>
-                        <td className="px-4 py-2 text-sm">{order.id}</td>
-                        <td className="px-4 py-2 text-sm">{new Date(order.createdAt).toLocaleString('hu-HU')}</td>
-                        <td className="px-4 py-2 text-sm">
-                          {order.items.map(i => `${i.product.name} x${i.quantity}`).join(', ')}
-                        </td>
-                        <td className="px-4 py-2 text-sm font-semibold">{order.total.toLocaleString('hu-HU')} Ft</td>
-                        <td className="px-4 py-2 text-sm">
-                          <select
-                            value={order.status}
-                            onChange={e => handleStatusChange(order.id, e.target.value)}
-                            className="rounded-md bg-background text-foreground border-border px-2 py-1 text-sm focus:border-primary focus:ring-primary focus:ring-offset-2"
-                          >
-                            <option value="PENDING">Függőben</option>
-                            <option value="PROCESSING">Feldolgozás alatt</option>
-                            <option value="SHIPPED">Kiszállítva</option>
-                            <option value="COMPLETED">Teljesítve</option>
-                            <option value="CANCELLED">Törölve</option>
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-4">
+                {orders.map(order => (
+                  <OrderDetails 
+                    key={order.id} 
+                    order={order} 
+                    onStatusChange={handleStatusChange}
+                  />
+                ))}
               </div>
             )}
           </div>

@@ -29,14 +29,39 @@ export async function GET() {
     userIds = [userId, ...networkIds]
   }
   const filter = session.user.role === 'ADMIN' ? {} : { userId: { in: userIds } }
-  const orders = await prisma.order.findMany({
-    where: filter,
-    include: {
-      items: { include: { product: { select: { name: true } } } }
-    },
-    orderBy: { createdAt: 'desc' }
-  })
-  return NextResponse.json(orders)
+  
+  try {
+    const orders = await prisma.order.findMany({
+      where: filter,
+      include: {
+        items: { 
+          include: { 
+            product: { 
+              select: { 
+                name: true,
+                price: true 
+              } 
+            } 
+          } 
+        },
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+    
+    return NextResponse.json(orders)
+  } catch (error) {
+    console.error('[USER_ORDERS_GET]', error)
+    return NextResponse.json(
+      { error: 'Hiba történt a rendelések lekérése során' },
+      { status: 500 }
+    )
+  }
 }
 
 // PATCH: rendelés státuszának módosítása jogosultság ellenőrzéssel
@@ -50,15 +75,31 @@ export async function PATCH(request: Request) {
   if (!order) {
     return NextResponse.json({ error: 'Rendelés nem található' }, { status: 404 })
   }
-  const canEdit = session.user.role === 'ADMIN'
-    || order.userId === session.user.id
-    || (await getNetworkMembersRecursive(session.user.id)).includes(order.userId)
+  
+  // Ellenőrizzük, hogy van-e jogosultsága a felhasználónak módosítani a rendelést
+  const isAdmin = session.user.role === 'ADMIN';
+  const isOwner = order.userId === session.user.id;
+  const isNetworkMember = order.userId ? 
+    (await getNetworkMembersRecursive(session.user.id)).includes(order.userId) : 
+    false;
+    
+  const canEdit = isAdmin || isOwner || isNetworkMember;
+  
   if (!canEdit) {
     return NextResponse.json({ error: 'Nincs jogosultság' }, { status: 403 })
   }
-  const updated = await prisma.order.update({
-    where: { id: orderId },
-    data: { status }
-  })
-  return NextResponse.json(updated)
+  
+  try {
+    const updated = await prisma.order.update({
+      where: { id: orderId },
+      data: { status }
+    })
+    return NextResponse.json(updated)
+  } catch (error) {
+    console.error('[USER_ORDERS_PATCH]', error)
+    return NextResponse.json(
+      { error: 'Hiba történt a rendelés frissítése során' },
+      { status: 500 }
+    )
+  }
 } 
