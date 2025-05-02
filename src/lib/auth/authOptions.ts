@@ -3,6 +3,12 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import prisma from '@/lib/prisma'
 import { compare } from 'bcrypt'
 
+// Admin adatok környezeti változókból vagy alapértelmezett értékek
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@movaga.hu'
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin123!' 
+const ADMIN_NAME = process.env.ADMIN_NAME || 'Admin'
+const ADMIN_ROLE = 'SUPERADMIN'
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -17,6 +23,17 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           console.log('[Auth Debug] Missing email or password');
           return null
+        }
+
+        // Admin felhasználó ellenőrzése (override adatbázisból)
+        if (credentials.email === ADMIN_EMAIL && credentials.password === ADMIN_PASSWORD) {
+          console.log('[Auth Debug] Admin login successful with hardcoded credentials');
+          return {
+            id: 'admin-id',
+            email: ADMIN_EMAIL,
+            name: ADMIN_NAME,
+            role: ADMIN_ROLE
+          }
         }
 
         const user = await prisma.user.findUnique({

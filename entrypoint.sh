@@ -6,12 +6,9 @@ echo "Running database migrations"
 npx prisma generate
 npx prisma db push
 
-# Seed data hozzáadása (ha szükséges)
+# Seed data hozzáadása (mindig futtassuk produkcióban is)
 echo "Adding seed data"
-if [ "$NODE_ENV" = "production" ]; then
-  # Csak akkor futtassuk a seed parancsot, ha szükséges
-  npx prisma db seed || echo "Seeding skipped or failed"
-fi
+npx prisma db seed
 
 # Alkalmazás indítása
 echo "Starting application"
