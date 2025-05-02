@@ -106,6 +106,24 @@ export async function DELETE(
       return new NextResponse('Product id is required', { status: 400 })
     }
 
+    // Ellenőrizzük, hogy a termékhez tartoznak-e rendelési tételek
+    const orderItems = await prisma.orderItem.findMany({
+      where: {
+        productId: params.id
+      }
+    })
+
+    // Ha vannak rendelési tételek, ne engedjük törölni a terméket
+    if (orderItems.length > 0) {
+      return NextResponse.json(
+        { 
+          error: 'A termék nem törölhető, mert rendelésekhez kapcsolódik',
+          message: 'A termék nem törölhető, mert rendelések részét képezi. Megjelölheti inaktívként helyette.'
+        }, 
+        { status: 400 }
+      )
+    }
+
     const product = await prisma.product.delete({
       where: {
         id: params.id,
@@ -113,8 +131,20 @@ export async function DELETE(
     })
 
     return NextResponse.json(product)
-  } catch (error) {
+  } catch (error: any) {
     console.error('[PRODUCT_DELETE]', error)
+    
+    // Ellenőrizzük, hogy foreign key constraint hiba történt-e
+    if (error?.code === 'P2003' && error?.meta?.field_name?.includes('OrderItem_productId_fkey')) {
+      return NextResponse.json(
+        { 
+          error: 'A termék nem törölhető, mert rendelésekhez kapcsolódik',
+          message: 'A termék nem törölhető, mert rendelések részét képezi. Megjelölheti inaktívként helyette.'
+        }, 
+        { status: 400 }
+      )
+    }
+    
     return new NextResponse('Internal error', { status: 500 })
   }
 } 
