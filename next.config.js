@@ -27,6 +27,17 @@ const nextConfig = {
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
+      // Teljesen kizárjuk a bcrypt-et és függőségeit a kliens oldalról
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        bcrypt: false,
+        '@mapbox/node-pre-gyp': false,
+        'aws-sdk': false,
+        'mock-aws-s3': false,
+        'nock': false,
+      };
+      
+      // Fallback-ek minden node-specifikus modulra
       config.resolve.fallback = {
         ...config.resolve.fallback,
         bcrypt: false,
@@ -36,8 +47,23 @@ const nextConfig = {
         crypto: false,
         stream: false,
         child_process: false,
+        dns: false,
+        net: false,
+        tls: false,
+        assert: false,
+        util: false,
+        http: false,
+        https: false,
+        zlib: false,
       };
+      
+      // Kizárjuk a bcrypt-et és minden függőségét a webpack feldolgozásból
+      config.module.rules.push({
+        test: /node_modules\/(@mapbox\/node-pre-gyp|bcrypt|aws-sdk|mock-aws-s3|nock)/,
+        use: 'null-loader',
+      });
     }
+    
     return config;
   },
   reactStrictMode: true,

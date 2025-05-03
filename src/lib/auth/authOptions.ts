@@ -3,16 +3,23 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import prisma from '@/lib/prisma'
 
 // Csak szerver oldalon importáljuk a bcrypt modulot
-let comparePassword: (plain: string, hashed: string) => Promise<boolean>
+let comparePassword: (plain: string, hashed: string) => Promise<boolean>;
 
 // Dinamikus importálás - csak a szerveroldalon lesz betöltve
-if (typeof window === 'undefined') {
-  import('bcrypt').then((bcrypt) => {
-    comparePassword = bcrypt.compare
-  })
+if (typeof process === 'object' && typeof window === 'undefined') {
+  // Szerver oldali kód
+  comparePassword = async (plain: string, hashed: string) => {
+    try {
+      const bcrypt = await import('bcrypt');
+      return bcrypt.compare(plain, hashed);
+    } catch (error) {
+      console.error('Failed to import bcrypt:', error);
+      return false;
+    }
+  };
 } else {
-  // Kliensoldali mock
-  comparePassword = () => Promise.resolve(false)
+  // Kliens oldali mock
+  comparePassword = () => Promise.resolve(false);
 }
 
 // Admin adatok környezeti változókból vagy alapértelmezett értékek

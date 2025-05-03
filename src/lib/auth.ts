@@ -3,12 +3,28 @@ let hashPassword: (password: string) => Promise<string>;
 let verifyPassword: (plain: string, hashed: string) => Promise<boolean>;
 
 // Csak a szerveroldalon importáljuk a bcrypt-et
-if (typeof window === 'undefined') {
-  import('bcrypt').then((bcrypt) => {
-    const SALT_ROUNDS = 10;
-    hashPassword = (password: string) => bcrypt.hash(password, SALT_ROUNDS);
-    verifyPassword = bcrypt.compare;
-  });
+if (typeof process === 'object' && typeof window === 'undefined') {
+  // Szerver oldali kód
+  hashPassword = async (password: string) => {
+    try {
+      const bcrypt = await import('bcrypt');
+      const SALT_ROUNDS = 10;
+      return bcrypt.hash(password, SALT_ROUNDS);
+    } catch (error) {
+      console.error('Failed to import bcrypt:', error);
+      return '';
+    }
+  };
+
+  verifyPassword = async (plain: string, hashed: string) => {
+    try {
+      const bcrypt = await import('bcrypt');
+      return bcrypt.compare(plain, hashed);
+    } catch (error) {
+      console.error('Failed to import bcrypt:', error);
+      return false;
+    }
+  };
 } else {
   // Kliens oldali stub
   hashPassword = () => Promise.resolve('');
@@ -50,6 +66,11 @@ export const authOptions: NextAuthOptions = {
 
         if (!user || !user.email) {
           throw new Error("Invalid credentials");
+        }
+
+        // Ellenőrizzük, hogy a hashedPassword létezik-e
+        if (!user.hashedPassword) {
+          throw new Error("Account not properly set up");
         }
 
         const isValid = await verifyPassword(credentials.password, user.hashedPassword);
