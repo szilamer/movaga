@@ -1,4 +1,4 @@
-import { ProductStatus } from '@prisma/client'
+import { ProductStatus, Prisma } from '@prisma/client'
 
 export interface DescriptionSection {
   id: string
@@ -10,7 +10,7 @@ export interface Product {
   id: string
   name: string
   description: string
-  descriptionSections?: DescriptionSection[]
+  descriptionSections?: DescriptionSection[] | Prisma.JsonValue
   price: number
   discountedPrice?: number | null
   images: string[]

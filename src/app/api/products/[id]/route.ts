@@ -71,28 +71,26 @@ export async function PUT(
     if (!name || !description || !price || !categoryId || !stock || !status) {
       return new NextResponse('Missing required fields', { status: 400 })
     }
+
+    // Handle different representations of descriptionSections to ensure it is valid for Prisma
+    let processedDescriptionSections;
     
-    // Handle descriptionSections - it should be stored as a string in the database
-    let processedDescriptionSections: Prisma.JsonValue | null = null;
-    if (descriptionSections) {
+    if (!descriptionSections) {
+      processedDescriptionSections = null;
+    } else if (typeof descriptionSections === 'string') {
+      // If it's already a string, try to parse it to make sure it's valid JSON
       try {
-        // If it's already a string, keep it as is, otherwise stringify it
-        if (typeof descriptionSections === 'string') {
-          // Parse to make sure it's valid JSON, then stringify back
-          processedDescriptionSections = JSON.parse(descriptionSections);
-        } else {
-          // Convert to JSON value
-          processedDescriptionSections = descriptionSections;
-        }
-        
-        console.log("Processed descriptionSections:", 
-          typeof processedDescriptionSections, 
-          JSON.stringify(processedDescriptionSections).substring(0, 50) + "...");
-      } catch (error) {
-        console.error("Error processing descriptionSections:", error);
+        processedDescriptionSections = JSON.parse(descriptionSections);
+      } catch (e) {
+        console.error("Error parsing descriptionSections string:", e);
         processedDescriptionSections = null;
       }
+    } else {
+      // If it's not a string, use it directly
+      processedDescriptionSections = descriptionSections;
     }
+
+    console.log("Final processed descriptionSections:", processedDescriptionSections);
 
     const product = await prisma.product.update({
       where: {

@@ -21,20 +21,28 @@ export async function GET(request: Request) {
       isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPERADMIN';
     }
 
-    const where = {
-      ...(categoryId && { categoryId }),
-      ...(search && {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' as const } },
-          { description: { contains: search, mode: 'insensitive' as const } },
-        ],
-      }),
-      // Csak akkor szűrünk ACTIVE státuszra, ha nem admin kérés
-      ...(!isAdmin && { status: 'ACTIVE' }),
+    // Build the where clause with proper types
+    const where: any = {};
+    
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
+    
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' as const } },
+        { description: { contains: search, mode: 'insensitive' as const } },
+      ];
+    }
+    
+    // Only filter by ACTIVE status if not an admin request
+    if (!isAdmin) {
+      where.status = 'ACTIVE';
     }
 
     console.log("API query where:", where);
 
+    // Use 'as any' to avoid TypeScript errors with the query result
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
@@ -46,12 +54,28 @@ export async function GET(request: Request) {
         orderBy: {
           createdAt: 'desc',
         },
-      }) as Promise<Product[]>,
+      }) as any,
       prisma.product.count({ where }),
     ])
 
-    console.log(`API products found: ${products.length}, total: ${total}`);
-    return NextResponse.json({ products, total })
+    // Process descriptionSections to convert from JSON to proper structure
+    const processedProducts = products.map((product: any) => {
+      if (product.descriptionSections) {
+        try {
+          // If descriptionSections is already an object, keep it as is
+          if (typeof product.descriptionSections === 'string') {
+            product.descriptionSections = JSON.parse(product.descriptionSections);
+          }
+        } catch (error) {
+          console.error(`Error parsing descriptionSections for product ${product.id}:`, error);
+          product.descriptionSections = [];
+        }
+      }
+      return product;
+    });
+
+    console.log(`API products found: ${processedProducts.length}, total: ${total}`);
+    return NextResponse.json({ products: processedProducts, total })
   } catch (error) {
     console.error('Hiba a termékek lekérdezésekor:', error)
     return NextResponse.json(
@@ -99,27 +123,25 @@ export async function POST(request: Request) {
       return new NextResponse('Missing required fields', { status: 400 })
     }
     
-    // Handle descriptionSections - it should be stored as a JSON in the database
-    let processedDescriptionSections: Prisma.JsonValue | null = null;
-    if (descriptionSections) {
+    // Handle different representations of descriptionSections to ensure it is valid for Prisma
+    let processedDescriptionSections;
+    
+    if (!descriptionSections) {
+      processedDescriptionSections = null;
+    } else if (typeof descriptionSections === 'string') {
+      // If it's already a string, try to parse it to make sure it's valid JSON
       try {
-        // If it's already a string, keep it as is, otherwise stringify it
-        if (typeof descriptionSections === 'string') {
-          // Parse to make sure it's valid JSON
-          processedDescriptionSections = JSON.parse(descriptionSections);
-        } else {
-          // Convert to JSON value
-          processedDescriptionSections = descriptionSections;
-        }
-        
-        console.log("Processed descriptionSections:", 
-          typeof processedDescriptionSections, 
-          JSON.stringify(processedDescriptionSections).substring(0, 50) + "...");
-      } catch (error) {
-        console.error("Error processing descriptionSections:", error);
+        processedDescriptionSections = JSON.parse(descriptionSections);
+      } catch (e) {
+        console.error("Error parsing descriptionSections string:", e);
         processedDescriptionSections = null;
       }
+    } else {
+      // If it's not a string, use it directly
+      processedDescriptionSections = descriptionSections;
     }
+
+    console.log("Final processed descriptionSections:", processedDescriptionSections);
 
     const product = await prisma.product.create({
       data: {

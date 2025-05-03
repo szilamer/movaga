@@ -30,24 +30,44 @@ interface ProductFormProps {
 
 export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
   // Parse descriptionSections if it's a string
-  const parsedInitialData = initialData ? {
-    ...initialData,
-    descriptionSections: initialData.descriptionSections 
-      ? (typeof initialData.descriptionSections === 'string' 
-          ? JSON.parse(initialData.descriptionSections) 
-          : initialData.descriptionSections)
-      : []
-  } : null;
+  const [formData, setFormData] = useState<FormData>(() => {
+    if (!initialData) {
+      return {
+        name: '',
+        description: '',
+        descriptionSections: [],
+        price: 0,
+        categoryId: categories[0]?.id || '',
+        stock: 0,
+        status: 'ACTIVE',
+        images: [],
+      };
+    }
 
-  const [formData, setFormData] = useState<FormData>(parsedInitialData || {
-    name: '',
-    description: '',
-    descriptionSections: [],
-    price: 0,
-    categoryId: categories[0]?.id || '',
-    stock: 0,
-    status: 'ACTIVE',
-    images: [],
+    // Handle description sections
+    let parsedDescriptionSections: DescriptionSection[] = [];
+    try {
+      if (initialData.descriptionSections) {
+        if (typeof initialData.descriptionSections === 'string') {
+          parsedDescriptionSections = JSON.parse(initialData.descriptionSections);
+        } else if (Array.isArray(initialData.descriptionSections)) {
+          parsedDescriptionSections = initialData.descriptionSections;
+        } else {
+          // Try to coerce to the correct format if it's an object
+          parsedDescriptionSections = Array.isArray(initialData.descriptionSections) 
+            ? initialData.descriptionSections
+            : [];
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing descriptionSections:', error);
+      parsedDescriptionSections = [];
+    }
+
+    return {
+      ...initialData,
+      descriptionSections: parsedDescriptionSections
+    };
   });
 
   const [loading, setLoading] = useState(false);
@@ -79,9 +99,8 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
 
       const dataToSend = {
         ...formData,
-        // Make sure descriptionSections is stringified for storage
         descriptionSections: formData.descriptionSections && formData.descriptionSections.length > 0 
-          ? JSON.stringify(formData.descriptionSections) 
+          ? formData.descriptionSections 
           : null
       };
 
@@ -98,9 +117,10 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
         }
       );
 
-      const data = await response.json();
-
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        
         if (response.status === 401) {
           toast.error('Nincs jogosultsága a művelethez');
         } else if (response.status === 403) {
@@ -108,11 +128,14 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
         } else if (response.status === 400) {
           toast.error('Kérem töltse ki az összes kötelező mezőt');
         } else {
-          toast.error('Hiba történt a mentés során');
+          toast.error(`Hiba történt a mentés során: ${response.status} ${errorText}`);
         }
+        setLoading(false);
         return;
       }
 
+      const data = await response.json();
+      console.log('Product saved:', data);
       toast.success('Termék sikeresen mentve!');
 
       // Sikeres mentés után töröljük az űrlapot
@@ -196,6 +219,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
                 className="rounded-lg object-cover"
                 sizes="(max-width: 128px) 100vw, 128px"
                 unoptimized={true}
+                priority
               />
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 transition-all group-hover:bg-opacity-50">
                 <button
@@ -260,7 +284,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
       </div>
 
       <ProductDescriptionSections 
-        sections={formData.descriptionSections || []}
+        sections={Array.isArray(formData.descriptionSections) ? formData.descriptionSections : []}
         onChange={handleDescriptionSectionsChange}
       />
 

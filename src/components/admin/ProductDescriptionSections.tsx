@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { type DescriptionSection } from '@/types';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Trash2 } from 'lucide-react';
@@ -16,6 +16,33 @@ export const ProductDescriptionSections = ({
   onChange 
 }: ProductDescriptionSectionsProps) => {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [localSections, setLocalSections] = useState<DescriptionSection[]>([]);
+
+  // Ensure sections is always a properly formatted array of DescriptionSection objects
+  useEffect(() => {
+    // Make sure sections is an array and has the right structure
+    if (!Array.isArray(sections)) {
+      console.warn('ProductDescriptionSections: sections is not an array', sections);
+      setLocalSections([]);
+      return;
+    }
+
+    // Validate that each item has the correct structure
+    const validSections = sections.filter(section => 
+      section && 
+      typeof section === 'object' && 
+      'id' in section && 
+      'title' in section && 
+      'content' in section
+    );
+
+    if (validSections.length !== sections.length) {
+      console.warn('ProductDescriptionSections: some sections were filtered out due to invalid format', 
+        sections, validSections);
+    }
+
+    setLocalSections(validSections);
+  }, [sections]);
 
   const handleAddSection = () => {
     const newSection: DescriptionSection = {
@@ -23,12 +50,15 @@ export const ProductDescriptionSections = ({
       title: '',
       content: ''
     };
-    onChange([...sections, newSection]);
+    const updatedSections = [...localSections, newSection];
+    setLocalSections(updatedSections);
+    onChange(updatedSections);
     setExpanded(newSection.id);
   };
 
   const handleRemoveSection = (id: string) => {
-    const updatedSections = sections.filter(section => section.id !== id);
+    const updatedSections = localSections.filter(section => section.id !== id);
+    setLocalSections(updatedSections);
     onChange(updatedSections);
     if (expanded === id) {
       setExpanded(null);
@@ -36,12 +66,13 @@ export const ProductDescriptionSections = ({
   };
 
   const handleUpdateSection = (id: string, field: 'title' | 'content', value: string) => {
-    const updatedSections = sections.map(section => {
+    const updatedSections = localSections.map(section => {
       if (section.id === id) {
         return { ...section, [field]: value };
       }
       return section;
     });
+    setLocalSections(updatedSections);
     onChange(updatedSections);
   };
 
@@ -68,12 +99,12 @@ export const ProductDescriptionSections = ({
       </div>
       
       <div className="space-y-3 border rounded-md p-4">
-        {sections.length === 0 ? (
+        {localSections.length === 0 ? (
           <div className="text-center text-gray-500 py-4">
             Nincs szekció hozzáadva. Kattintson az "Új szekció" gombra a hozzáadáshoz.
           </div>
         ) : (
-          sections.map((section) => (
+          localSections.map((section) => (
             <div key={section.id} className="border rounded-md overflow-hidden">
               <div 
                 className={`flex items-center justify-between p-3 bg-gray-50 cursor-pointer ${
