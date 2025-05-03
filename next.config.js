@@ -4,24 +4,8 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'placekitten.com',
+        hostname: '**',
       },
-      {
-        protocol: 'https',
-        hostname: 'movaga.onrender.com',
-      },
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-      },
-      {
-        protocol: 'https',
-        hostname: 'uploadthing.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'utfs.io',
-      }
     ],
     unoptimized: process.env.NODE_ENV === 'production',
   },
@@ -41,6 +25,25 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        bcrypt: false,
+        fs: false,
+        path: false,
+        os: false,
+        crypto: false,
+        stream: false,
+        child_process: false,
+      };
+    }
+    return config;
+  },
+  reactStrictMode: true,
+  experimental: {
+    webpackBuildWorker: true,
+  }
 };
 
 module.exports = nextConfig; 

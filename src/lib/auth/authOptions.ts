@@ -1,7 +1,19 @@
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import prisma from '@/lib/prisma'
-import { compare } from 'bcrypt'
+
+// Csak szerver oldalon importáljuk a bcrypt modulot
+let comparePassword: (plain: string, hashed: string) => Promise<boolean>
+
+// Dinamikus importálás - csak a szerveroldalon lesz betöltve
+if (typeof window === 'undefined') {
+  import('bcrypt').then((bcrypt) => {
+    comparePassword = bcrypt.compare
+  })
+} else {
+  // Kliensoldali mock
+  comparePassword = () => Promise.resolve(false)
+}
 
 // Admin adatok környezeti változókból vagy alapértelmezett értékek
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@movaga.hu'
@@ -55,7 +67,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         console.log('[Auth Debug] Comparing password:', credentials.password, 'with hash:', user.hashedPassword);
-        const isValid = await compare(credentials.password, user.hashedPassword)
+        const isValid = await comparePassword(credentials.password, user.hashedPassword)
         console.log('[Auth Debug] Password validation result (isValid):', isValid);
 
         if (!isValid) {

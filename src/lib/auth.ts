@@ -1,18 +1,26 @@
-import { hash, compare } from 'bcrypt'
+// Szerveres modul - dinamikus importálás
+let hashPassword: (password: string) => Promise<string>;
+let verifyPassword: (plain: string, hashed: string) => Promise<boolean>;
+
+// Csak a szerveroldalon importáljuk a bcrypt-et
+if (typeof window === 'undefined') {
+  import('bcrypt').then((bcrypt) => {
+    const SALT_ROUNDS = 10;
+    hashPassword = (password: string) => bcrypt.hash(password, SALT_ROUNDS);
+    verifyPassword = bcrypt.compare;
+  });
+} else {
+  // Kliens oldali stub
+  hashPassword = () => Promise.resolve('');
+  verifyPassword = () => Promise.resolve(false);
+}
+
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "./prisma";
 
-const SALT_ROUNDS = 10
-
-export async function hashPassword(password: string): Promise<string> {
-  return hash(password, SALT_ROUNDS)
-}
-
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return compare(password, hashedPassword)
-}
+export { hashPassword, verifyPassword };
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -44,7 +52,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
-        const isValid = await compare(credentials.password, user.hashedPassword);
+        const isValid = await verifyPassword(credentials.password, user.hashedPassword);
 
         if (!isValid) {
           throw new Error("Invalid credentials");

@@ -1,14 +1,21 @@
-import { hash, compare } from 'bcrypt'
+// Szerveres modul - dinamikus importálás
+let hashPassword: (password: string) => Promise<string>;
+let verifyPassword: (plain: string, hashed: string) => Promise<boolean>;
 
-const SALT_ROUNDS = 10
-
-export async function hashPassword(password: string): Promise<string> {
-  return hash(password, SALT_ROUNDS)
+// Csak a szerveroldalon importáljuk a bcrypt-et
+if (typeof window === 'undefined') {
+  import('bcrypt').then((bcrypt) => {
+    const SALT_ROUNDS = 10;
+    hashPassword = (password: string) => bcrypt.hash(password, SALT_ROUNDS);
+    verifyPassword = bcrypt.compare;
+  });
+} else {
+  // Kliens oldali stub
+  hashPassword = () => Promise.resolve('');
+  verifyPassword = () => Promise.resolve(false);
 }
 
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return compare(password, hashedPassword)
-}
+export { hashPassword, verifyPassword };
 
 export async function generateToken(length: number = 32): Promise<string> {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
