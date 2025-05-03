@@ -27,20 +27,20 @@ const nextConfig = {
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // Teljesen kizárjuk a bcrypt-et és függőségeit a kliens oldalról
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        bcrypt: false,
-        '@mapbox/node-pre-gyp': false,
-        'aws-sdk': false,
-        'mock-aws-s3': false,
-        'nock': false,
-      };
-      
+      // Blokkolja a bcrypt-et és egyéb szerveroldali modulokat, 
+      // hogy ne próbálja meg beolvasni őket webpack
+      config.plugins.push(
+        new config.webpack.NormalModuleReplacementPlugin(
+          /bcrypt|@mapbox\/node-pre-gyp|aws-sdk|mock-aws-s3|nock/,
+          resource => {
+            resource.request = require.resolve('./src/lib/mocks/empty-module.js');
+          }
+        )
+      );
+
       // Fallback-ek minden node-specifikus modulra
       config.resolve.fallback = {
         ...config.resolve.fallback,
-        bcrypt: false,
         fs: false,
         path: false,
         os: false,
@@ -56,14 +56,7 @@ const nextConfig = {
         https: false,
         zlib: false,
       };
-      
-      // Kizárjuk a bcrypt-et és minden függőségét a webpack feldolgozásból
-      config.module.rules.push({
-        test: /node_modules\/(@mapbox\/node-pre-gyp|bcrypt|aws-sdk|mock-aws-s3|nock)/,
-        use: 'null-loader',
-      });
     }
-    
     return config;
   },
   reactStrictMode: true,

@@ -10,7 +10,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# Először csak a dependenciákat másoljuk
 COPY package.json package-lock.json ./
+# Kihagyja a bcrypt és node-pre-gyp függőségeket a build során
 RUN npm ci
 
 FROM node:18-slim AS builder
@@ -23,9 +26,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# Minden fájlt átmásolunk
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
+
+# Generáljuk a Prisma klienst
 RUN npx prisma generate
+
+# Futtatjuk a build parancsot
+ENV NODE_ENV=production
 RUN npm run build
 
 FROM node:18-slim AS runner
