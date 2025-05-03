@@ -2,12 +2,15 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
 import prisma from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log("API GET /products/[id] started", params.id);
+    
     if (!params.id) {
       return new NextResponse('Product id is required', { status: 400 })
     }
@@ -20,6 +23,8 @@ export async function GET(
         category: true,
       },
     })
+    
+    console.log("Product found:", product?.id || "none");
 
     return NextResponse.json(product)
   } catch (error) {
@@ -33,6 +38,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log("API PUT /products/[id] started", params.id);
+    
     const session = await getServerSession(authOptions)
 
     if (!session || !session.user) {
@@ -44,6 +51,7 @@ export async function PUT(
     }
 
     const json = await request.json()
+    console.log("Received product data:", json);
 
     const {
       name,
@@ -63,6 +71,28 @@ export async function PUT(
     if (!name || !description || !price || !categoryId || !stock || !status) {
       return new NextResponse('Missing required fields', { status: 400 })
     }
+    
+    // Handle descriptionSections - it should be stored as a string in the database
+    let processedDescriptionSections: Prisma.JsonValue | null = null;
+    if (descriptionSections) {
+      try {
+        // If it's already a string, keep it as is, otherwise stringify it
+        if (typeof descriptionSections === 'string') {
+          // Parse to make sure it's valid JSON, then stringify back
+          processedDescriptionSections = JSON.parse(descriptionSections);
+        } else {
+          // Convert to JSON value
+          processedDescriptionSections = descriptionSections;
+        }
+        
+        console.log("Processed descriptionSections:", 
+          typeof processedDescriptionSections, 
+          JSON.stringify(processedDescriptionSections).substring(0, 50) + "...");
+      } catch (error) {
+        console.error("Error processing descriptionSections:", error);
+        processedDescriptionSections = null;
+      }
+    }
 
     const product = await prisma.product.update({
       where: {
@@ -71,7 +101,7 @@ export async function PUT(
       data: {
         name,
         description,
-        descriptionSections: descriptionSections ? JSON.stringify(descriptionSections) : null,
+        descriptionSections: processedDescriptionSections,
         price: Number(price),
         discountedPrice: discountedPrice ? Number(discountedPrice) : null,
         categoryId,
@@ -83,6 +113,8 @@ export async function PUT(
         images: images || [],
       },
     })
+    
+    console.log("Product updated:", product.id);
 
     return NextResponse.json(product)
   } catch (error) {

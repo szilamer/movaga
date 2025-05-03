@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { type Category, type DescriptionSection } from '@/types';
 import { type ProductStatus } from '@prisma/client';
 import Image from 'next/image';
@@ -25,11 +25,21 @@ interface FormData {
 
 interface ProductFormProps {
   categories: Category[];
-  initialData?: FormData & { id?: string };
+  initialData?: any;
 }
 
 export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
-  const [formData, setFormData] = useState<FormData>(initialData || {
+  // Parse descriptionSections if it's a string
+  const parsedInitialData = initialData ? {
+    ...initialData,
+    descriptionSections: initialData.descriptionSections 
+      ? (typeof initialData.descriptionSections === 'string' 
+          ? JSON.parse(initialData.descriptionSections) 
+          : initialData.descriptionSections)
+      : []
+  } : null;
+
+  const [formData, setFormData] = useState<FormData>(parsedInitialData || {
     name: '',
     description: '',
     descriptionSections: [],
@@ -43,6 +53,18 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  useEffect(() => {
+    console.log('ProductForm mounted with initialData:', initialData);
+    if (initialData && initialData.descriptionSections) {
+      try {
+        console.log('Original descriptionSections:', initialData.descriptionSections);
+        console.log('Type:', typeof initialData.descriptionSections);
+      } catch (error) {
+        console.error('Error logging descriptionSections:', error);
+      }
+    }
+  }, [initialData]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -55,6 +77,16 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
         return;
       }
 
+      const dataToSend = {
+        ...formData,
+        // Make sure descriptionSections is stringified for storage
+        descriptionSections: formData.descriptionSections && formData.descriptionSections.length > 0 
+          ? JSON.stringify(formData.descriptionSections) 
+          : null
+      };
+
+      console.log('Submitting data:', dataToSend);
+
       const response = await fetch(
         initialData?.id ? `/api/products/${initialData.id}` : '/api/products',
         {
@@ -62,10 +94,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            ...formData,
-            images: formData.images,
-          }),
+          body: JSON.stringify(dataToSend),
         }
       );
 
@@ -147,6 +176,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
   };
 
   const handleDescriptionSectionsChange = (sections: DescriptionSection[]) => {
+    console.log('DescriptionSections updated:', sections);
     setFormData({ ...formData, descriptionSections: sections });
   };
 

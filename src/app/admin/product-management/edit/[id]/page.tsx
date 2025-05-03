@@ -27,11 +27,36 @@ export default function EditProductPage() {
 
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`/api/products/${id}`);
+        console.log("Fetching product with ID:", id);
+        const res = await fetch(`/api/products/${id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          },
+          cache: 'no-store'
+        });
+        
         if (!res.ok) {
-          throw new Error('Termék nem található');
+          const errorText = await res.text();
+          console.error('API error response:', errorText);
+          throw new Error(`Termék nem található: ${res.status} ${errorText}`);
         }
+        
         const data = await res.json();
+        console.log("Loaded product data:", data);
+        
+        // Check if descriptionSections is a string and can be parsed
+        if (data.descriptionSections && typeof data.descriptionSections === 'string') {
+          try {
+            console.log("Parsing descriptionSections from string");
+            // Don't parse it here - let the ProductForm component handle this
+          } catch (error) {
+            console.error("Error parsing descriptionSections:", error);
+            data.descriptionSections = [];
+          }
+        }
+        
         setProduct(data);
       } catch (error) {
         console.error('Hiba a termék betöltésekor:', error);
@@ -42,8 +67,24 @@ export default function EditProductPage() {
 
     const fetchCategories = async () => {
       try {
-        const res = await fetch('/api/categories');
+        console.log("Fetching categories");
+        const res = await fetch('/api/categories', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          },
+          cache: 'no-store'
+        });
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('API error response:', errorText);
+          throw new Error(`Hiba a kategóriák betöltésekor: ${res.status} ${errorText}`);
+        }
+        
         const data = await res.json();
+        console.log("Categories loaded:", data?.length || 0);
         setCategories(data);
       } catch (error) {
         console.error('Hiba a kategóriák betöltésekor:', error);
@@ -53,8 +94,10 @@ export default function EditProductPage() {
       }
     };
 
-    fetchProduct();
-    fetchCategories();
+    if (status === 'authenticated') {
+      fetchProduct();
+      fetchCategories();
+    }
   }, [id, router, session, status]);
 
   if (loading) {

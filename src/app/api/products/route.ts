@@ -74,7 +74,11 @@ export async function POST(request: Request) {
   }
 
   try {
+    console.log("API POST /products started");
+    
     const json = await request.json()
+    console.log("Received product data for creation:", json);
+    
     const {
       name,
       description,
@@ -94,12 +98,34 @@ export async function POST(request: Request) {
     if (!name || !description || !price || !categoryId || stock === undefined) {
       return new NextResponse('Missing required fields', { status: 400 })
     }
+    
+    // Handle descriptionSections - it should be stored as a JSON in the database
+    let processedDescriptionSections: Prisma.JsonValue | null = null;
+    if (descriptionSections) {
+      try {
+        // If it's already a string, keep it as is, otherwise stringify it
+        if (typeof descriptionSections === 'string') {
+          // Parse to make sure it's valid JSON
+          processedDescriptionSections = JSON.parse(descriptionSections);
+        } else {
+          // Convert to JSON value
+          processedDescriptionSections = descriptionSections;
+        }
+        
+        console.log("Processed descriptionSections:", 
+          typeof processedDescriptionSections, 
+          JSON.stringify(processedDescriptionSections).substring(0, 50) + "...");
+      } catch (error) {
+        console.error("Error processing descriptionSections:", error);
+        processedDescriptionSections = null;
+      }
+    }
 
     const product = await prisma.product.create({
       data: {
         name,
         description,
-        descriptionSections: descriptionSections ? JSON.stringify(descriptionSections) : null,
+        descriptionSections: processedDescriptionSections,
         price: Number(price),
         discountedPrice: discountedPrice ? Number(discountedPrice) : null,
         categoryId,
@@ -111,6 +137,8 @@ export async function POST(request: Request) {
         images: images || [],
       },
     })
+    
+    console.log("Product created:", product.id);
 
     return NextResponse.json(product)
   } catch (error) {
