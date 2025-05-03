@@ -6,7 +6,16 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'placekitten.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'movaga.onrender.com',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
     ],
+    unoptimized: process.env.NODE_ENV === 'production',
   },
   env: {
     NEXTAUTH_URL: process.env.NODE_ENV === 'production' 
