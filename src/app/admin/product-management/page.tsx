@@ -15,17 +15,44 @@ export default function AdminProductManagementPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Redirect if not authenticated or not admin
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      redirect('/auth/login');
+    }
+
+    if (status === 'authenticated' && 
+        (!session?.user?.role || !['ADMIN', 'SUPERADMIN'].includes(session.user.role as string))) {
+      redirect('/');
+    }
+    
+    if (status === 'authenticated') {
+      loadProducts();
+      loadCategories();
+    }
+  }, [status, session]);
+
   const loadProducts = async () => {
     try {
       console.log("Termékek betöltése elkezdődött");
       setLoading(true);
+      
+      // Set headers and cache options explicitly
       const res = await fetch('/api/products?admin=true', { 
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
         cache: 'no-store' 
       });
+      
       console.log("Termékek API válasz:", res.status);
       
       if (!res.ok) {
-        throw new Error('Hiba a termékek betöltésekor');
+        const errorText = await res.text();
+        console.error('API error response:', errorText);
+        throw new Error(`Hiba a termékek betöltésekor: ${res.status} ${errorText}`);
       }
       
       const data = await res.json();
@@ -44,11 +71,21 @@ export default function AdminProductManagementPage() {
   const loadCategories = async () => {
     try {
       console.log("Kategóriák betöltése elkezdődött");
-      const res = await fetch('/api/categories', { cache: 'no-store' });
+      const res = await fetch('/api/categories', { 
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        cache: 'no-store' 
+      });
+      
       console.log("Kategóriák API válasz:", res.status);
       
       if (!res.ok) {
-        throw new Error('Hiba a kategóriák betöltésekor');
+        const errorText = await res.text();
+        console.error('API error response:', errorText);
+        throw new Error(`Hiba a kategóriák betöltésekor: ${res.status} ${errorText}`);
       }
       
       const data = await res.json();
@@ -59,35 +96,6 @@ export default function AdminProductManagementPage() {
       toast.error('Hiba történt a kategóriák betöltése során');
     }
   };
-
-  useEffect(() => {
-    console.log("Page status:", status);
-    console.log("Session:", session);
-    
-    if (status === 'unauthenticated') {
-      console.log("Nincs bejelentkezve, átirányítás a login oldalra");
-      redirect('/auth/login');
-    }
-
-    if (session?.user?.role && ['ADMIN', 'SUPERADMIN'].includes(session.user.role)) {
-      console.log("Admin felhasználó betöltése:", session.user.role);
-      loadProducts();
-      loadCategories();
-    } else if (status === 'authenticated') {
-      console.log("Bejelentkezett, de nem admin, átirányítás a főoldalra");
-      redirect('/');
-    }
-  }, [session, status]);
-
-  if (status === 'loading') {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto py-8">

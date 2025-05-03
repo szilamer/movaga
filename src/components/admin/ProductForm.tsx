@@ -184,16 +184,19 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
           <div className="flex flex-col items-start space-y-2">
             <UploadButton
               endpoint="productImage"
-              onClientUploadComplete={(res: Array<{ url: string }>) => {
-                if (res) {
+              onClientUploadComplete={(res) => {
+                if (res && res.length > 0) {
                   const urls = res.map((file) => file.url);
+                  console.log("Uploaded files:", urls);
                   setFormData((prev) => ({ ...prev, images: [...prev.images, ...urls] }));
                   toast.success("Képek sikeresen feltöltve!");
                 }
               }}
               onUploadError={(error: Error) => {
+                console.error("Upload error:", error);
                 toast.error(`Hiba történt a feltöltés során: ${error.message}`);
               }}
+              config={{ mode: "auto" }}
             />
           </div>
           

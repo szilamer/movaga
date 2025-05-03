@@ -58,6 +58,7 @@ export const ProductList = ({ products, onProductDeleted }: ProductListProps) =>
                   className="object-cover"
                   sizes="80px"
                   unoptimized={true}
+                  priority
                 />
               </div>
             ) : (
