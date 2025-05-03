@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
+import { getAbsoluteImageUrl } from '@/utils/imageUtils';
 
 interface HomepageSettings {
   heroBackgroundImage: string;
@@ -43,7 +44,9 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
       formData.append('file', file);
       formData.append('type', type);
 
-      const response = await fetch('/api/admin/homepage', {
+      // Use absolute URL with base URL for API calls
+      const baseUrl = process.env.NEXT_PUBLIC_URL || '';
+      const response = await fetch(`${baseUrl}/api/admin/homepage`, {
         method: 'POST',
         body: formData,
       });
@@ -75,7 +78,7 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
           <div className="space-y-4">
             <div className="relative aspect-video overflow-hidden rounded-lg border">
               <Image
-                src={settings.heroBackgroundImage}
+                src={getAbsoluteImageUrl(settings.heroBackgroundImage)}
                 alt="Hero háttérkép"
                 fill
                 className="object-cover"
@@ -134,7 +137,7 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
           <div className="space-y-4">
             <div className="relative aspect-video overflow-hidden rounded-lg border">
               <Image
-                src={settings.pageBackgroundImage}
+                src={getAbsoluteImageUrl(settings.pageBackgroundImage)}
                 alt="Oldal háttérkép"
                 fill
                 className="object-cover"
@@ -195,12 +198,12 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
           <div className="relative overflow-hidden rounded-lg">
             <div 
               className="h-64 w-full bg-cover bg-center filter grayscale hover:filter-none transition-filter duration-1000"
-              style={{ backgroundImage: `url('${settings.heroBackgroundImage}')` }}
+              style={{ backgroundImage: `url('${getAbsoluteImageUrl(settings.heroBackgroundImage)}')` }}
             />
             <div className="absolute inset-0 bg-black/60 hover:bg-black/20 transition-colors duration-1000 flex flex-col items-center justify-center">
               <div className="relative w-40 h-40 mb-4">
                 <Image
-                  src="/logo.png"
+                  src={getAbsoluteImageUrl('/logo.png')}
                   alt="Hero Logo Preview"
                   fill
                   className="object-contain"
@@ -213,7 +216,7 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
           <h3 className="text-lg font-medium mt-6">Oldal háttérkép</h3>
           <div 
             className="h-32 w-full rounded-lg bg-cover bg-center opacity-70"
-            style={{ backgroundImage: `url('${settings.pageBackgroundImage}')` }}
+            style={{ backgroundImage: `url('${getAbsoluteImageUrl(settings.pageBackgroundImage)}')` }}
           />
           <p className="text-sm text-gray-500">Az oldal háttérkép a teljes weboldal hátterében jelenik meg.</p>
         </div>

@@ -1,4 +1,4 @@
-import { writeFile, readFile } from 'fs/promises';
+import { writeFile, readFile, mkdir } from 'fs/promises';
 import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
 import { getServerSession } from 'next-auth';
@@ -18,6 +18,12 @@ const defaultSettings = {
 async function getSettings() {
   try {
     if (!existsSync(settingsFilePath)) {
+      // Ensure directory exists
+      const dir = join(process.cwd(), 'public/uploads/homepage');
+      if (!existsSync(dir)) {
+        await mkdir(dir, { recursive: true });
+      }
+      
       await writeFile(settingsFilePath, JSON.stringify(defaultSettings));
       return defaultSettings;
     }
@@ -32,6 +38,12 @@ async function getSettings() {
 
 // Beállítások mentése
 async function saveSettings(settings: any) {
+  // Ensure directory exists
+  const dir = join(process.cwd(), 'public/uploads/homepage');
+  if (!existsSync(dir)) {
+    await mkdir(dir, { recursive: true });
+  }
+  
   await writeFile(settingsFilePath, JSON.stringify(settings));
 }
 
@@ -68,13 +80,26 @@ export async function POST(request: NextRequest) {
     // Generálunk egy egyedi fájlnevet
     const timestamp = Date.now();
     const fileName = `${imageType}-${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
-    const path = join(process.cwd(), 'public/uploads/homepage', fileName);
+    
+    // Ensure directory exists
+    const uploadDir = join(process.cwd(), 'public/uploads/homepage');
+    if (!existsSync(uploadDir)) {
+      await mkdir(uploadDir, { recursive: true });
+    }
+    
+    const path = join(uploadDir, fileName);
     
     // Mentjük a fájlt
     await writeFile(path, buffer);
     
-    // Publikus URL
-    const fileUrl = `/uploads/homepage/${fileName}`;
+    // Publikus URL - production-ben abszolút URL
+    let fileUrl = `/uploads/homepage/${fileName}`;
+    
+    // If in production, prepend the base URL
+    if (process.env.NODE_ENV === 'production') {
+      const baseUrl = process.env.NEXT_PUBLIC_URL || '';
+      fileUrl = `${baseUrl}${fileUrl}`;
+    }
     
     // Frissítjük a beállításokat
     const settings = await getSettings();

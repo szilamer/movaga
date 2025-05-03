@@ -71,7 +71,39 @@ async function getNetworkMembersRecursive(userId: string, depth: number = 0, max
 }
 
 // Admin felhasználó saját adatainak lekérése a hálózat gyökereként
-async function getAdminAsRoot(userId: string): Promise<NetworkMember> {
+async function getAdminAsRoot(userId: string, session: any): Promise<NetworkMember> {
+  // Ellenőrizzük, hogy admin-id-e a userId, ez jelzi a hardcoded admin-t
+  const isHardcodedAdmin = userId === 'admin-id';
+  
+  // Ha hardcoded admin, akkor közvetlenül a session-ből dolgozunk
+  if (isHardcodedAdmin) {
+    console.log('[NETWORK] Using hardcoded admin from session data');
+    
+    // Lekérjük az összes felhasználót
+    const allUsers = await prisma.user.findMany({
+      select: {
+        id: true,
+        referrerId: true,
+      },
+    });
+    
+    // Lekérjük a null referrer-rel rendelkező felhasználókat
+    const nullReferrerUsers = await getNullReferrerUsers();
+
+    // Létrehozunk egy virtuális admin felhasználót a session alapján
+    return {
+      id: session.user.id,
+      name: session.user.name || 'Admin',
+      email: session.user.email || 'admin@movaga.hu',
+      monthlySales: 0,
+      joinedAt: new Date(),
+      role: 'SUPERADMIN',
+      referralCount: allUsers.filter(user => user.referrerId === null).length,
+      children: nullReferrerUsers,
+    };
+  }
+  
+  // Ha nem hardcoded admin, próbáljuk meg az adatbázisból lekérni
   const admin = await prisma.user.findUnique({
     where: {
       id: userId,
@@ -90,10 +122,35 @@ async function getAdminAsRoot(userId: string): Promise<NetworkMember> {
     },
   });
   
+  // Ha nincs az adatbázisban, használjuk a session adatait
   if (!admin) {
-    throw new Error('Admin felhasználó nem található');
+    console.log('[NETWORK] Admin user not found in database, using session data');
+    
+    // Lekérjük az összes felhasználót
+    const allUsers = await prisma.user.findMany({
+      select: {
+        id: true,
+        referrerId: true,
+      },
+    });
+    
+    // Lekérjük a null referrer-rel rendelkező felhasználókat
+    const nullReferrerUsers = await getNullReferrerUsers();
+
+    // Létrehozunk egy virtuális admin felhasználót a session alapján
+    return {
+      id: session.user.id,
+      name: session.user.name || 'Admin',
+      email: session.user.email || 'admin@movaga.hu',
+      monthlySales: 0,
+      joinedAt: new Date(),
+      role: 'SUPERADMIN',
+      referralCount: allUsers.filter(user => user.referrerId === null).length,
+      children: nullReferrerUsers,
+    };
   }
   
+  // Normál eset, ha megtaláltuk az admint az adatbázisban
   const now = new Date()
   const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   
@@ -194,9 +251,13 @@ export async function GET() {
       )
     }
 
-    // Admin esetén a felhasználót tesszük a hálózat gyökerébe
+    // Hardkódolt admin kezelése
+    const isHardcodedAdmin = session.user.id === 'admin-id';
+    
+    // Admin vagy hardkódolt admin esetén a felhasználót tesszük a hálózat gyökerébe
     if (session.user.role === 'ADMIN' || session.user.role === 'SUPERADMIN') {
-      const adminWithNetwork = await getAdminAsRoot(session.user.id);
+      // Átadjuk a session-t is a getAdminAsRoot függvénynek
+      const adminWithNetwork = await getAdminAsRoot(session.user.id, session);
       
       return NextResponse.json({
         members: [adminWithNetwork],

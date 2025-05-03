@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { formatPrice } from '@/lib/utils';
 import { type Product } from '@/types';
 import { useDiscount } from '@/hooks/useDiscount';
+import { getAbsoluteImageUrl } from '@/utils/imageUtils';
 
 interface ProductCardProps {
   product: Product;
@@ -16,8 +17,8 @@ export function ProductCard({ product }: ProductCardProps) {
   
   // Use the first image or a default if no images are available
   const imageUrl = product.images && product.images.length > 0 
-    ? product.images[0] 
-    : '/hero-bg.jpg';
+    ? getAbsoluteImageUrl(product.images[0])
+    : getAbsoluteImageUrl('/hero-bg.jpg');
   
   const categoryName = typeof product.category === 'string' ? product.category : product.category?.name || '';
 

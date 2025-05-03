@@ -8,6 +8,7 @@ import { formatPrice } from '@/lib/utils';
 import { type Product } from '@/types';
 import { useDiscount } from '@/hooks/useDiscount';
 import { ProductAccordion } from '@/components/ProductAccordion';
+import { getAbsoluteImageUrl, getAbsoluteImageUrls } from '@/utils/imageUtils';
 
 interface ProductDetailsProps {
   product: Product;
@@ -19,9 +20,12 @@ export function ProductDetails({ product }: ProductDetailsProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   
   // Ensure we have an array of images or provide a default
-  const images = product.images && product.images.length > 0 
+  const rawImages = product.images && product.images.length > 0 
     ? product.images 
     : ['/hero-bg.jpg'];
+  
+  // Convert all images to absolute URLs
+  const images = getAbsoluteImageUrls(rawImages);
   
   return (
     <div className="container mx-auto px-4 py-8">

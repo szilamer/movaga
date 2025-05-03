@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { getAbsoluteImageUrl } from '@/utils/imageUtils';
 
 interface HomepageSettings {
   heroBackgroundImage: string;
@@ -21,10 +22,15 @@ export default function BackgroundProvider({ children }: BackgroundProviderProps
     const fetchSettings = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/admin/homepage');
+        // Use absolute URL in production
+        const baseUrl = process.env.NEXT_PUBLIC_URL || '';
+        const response = await fetch(`${baseUrl}/api/admin/homepage`);
         if (response.ok) {
           const data = await response.json();
-          setBackgroundImage(data.pageBackgroundImage || '/background.jpg');
+          
+          // Ensure the image URL is absolute
+          const bgImage = data.pageBackgroundImage || '/background.jpg';
+          setBackgroundImage(getAbsoluteImageUrl(bgImage));
         }
       } catch (error) {
         console.error('Error loading homepage settings:', error);
