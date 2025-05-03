@@ -1,37 +1,12 @@
-// Szerveres modul - dinamikus importálás
-let hashPassword: (password: string) => Promise<string>;
-let verifyPassword: (plain: string, hashed: string) => Promise<boolean>;
-
-// Csak a szerveroldalon importáljuk a bcrypt-et
-if (typeof process === 'object' && typeof window === 'undefined') {
-  // Szerver oldali kód
-  hashPassword = async (password: string) => {
-    try {
-      const bcrypt = await import('bcrypt');
-      const SALT_ROUNDS = 10;
-      return bcrypt.hash(password, SALT_ROUNDS);
-    } catch (error) {
-      console.error('Failed to import bcrypt:', error);
-      return '';
-    }
-  };
-
-  verifyPassword = async (plain: string, hashed: string) => {
-    try {
-      const bcrypt = await import('bcrypt');
-      return bcrypt.compare(plain, hashed);
-    } catch (error) {
-      console.error('Failed to import bcrypt:', error);
-      return false;
-    }
-  };
-} else {
-  // Kliens oldali stub
-  hashPassword = () => Promise.resolve('');
-  verifyPassword = () => Promise.resolve(false);
+// Simple mock functions without bcrypt
+export function hashPassword(password: string): Promise<string> {
+  return Promise.resolve(`mock-hash-${password}`);
 }
 
-export { hashPassword, verifyPassword };
+export function verifyPassword(plain: string, hashed: string): Promise<boolean> {
+  // In this simplified version, only the hardcoded admin can login
+  return Promise.resolve(false);
+}
 
 export async function generateToken(length: number = 32): Promise<string> {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
