@@ -67,12 +67,14 @@ export class BarionService {
   private posKey: string;
   private isTestMode: boolean;
 
-  constructor(posKey: string, isTestMode: boolean = true) {
-    if (!posKey) {
+  constructor(posKey?: string, isTestMode: boolean = true) {
+    this.posKey = posKey || process.env.BARION_POS_KEY || 'fab5fa17-77a6-4cf6-a5ae-a5cb81e264d8';
+    if (!this.posKey) {
+      console.error('POS Key is not provided for BarionService and environment variable is not set');
       throw new Error('POS Key is required for BarionService');
     }
-    this.posKey = posKey;
     this.isTestMode = isTestMode;
+    console.log('BarionService initialized with POS Key length:', this.posKey?.length || 0);
   }
 
   private getApiBase(): string {
