@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const webpack = require('webpack');
+
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -30,7 +32,7 @@ const nextConfig = {
       // Blokkolja a bcrypt-et és egyéb szerveroldali modulokat, 
       // hogy ne próbálja meg beolvasni őket webpack
       config.plugins.push(
-        new config.webpack.NormalModuleReplacementPlugin(
+        new webpack.NormalModuleReplacementPlugin(
           /bcrypt|@mapbox\/node-pre-gyp|aws-sdk|mock-aws-s3|nock/,
           resource => {
             resource.request = require.resolve('./src/lib/mocks/empty-module.js');
