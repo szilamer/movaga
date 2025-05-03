@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     }
 
     // Initialize Barion service with your POS key
-    const posKey = process.env.BARION_POS_KEY || '';
+    const posKey = process.env.BARION_POS_KEY || 'fab5fa17-77a6-4cf6-a5ae-a5cb81e264d8';
     console.log(`${logPrefix} Using POS key:`, posKey);
     logToFile(`Using POS key: ${posKey}`);
     
