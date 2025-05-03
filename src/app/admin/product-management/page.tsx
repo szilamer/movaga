@@ -17,12 +17,19 @@ export default function AdminProductManagementPage() {
 
   const loadProducts = async () => {
     try {
+      console.log("Termékek betöltése elkezdődött");
       setLoading(true);
-      const res = await fetch('/api/products', { cache: 'no-store' });
+      const res = await fetch('/api/products?admin=true', { 
+        cache: 'no-store' 
+      });
+      console.log("Termékek API válasz:", res.status);
+      
       if (!res.ok) {
         throw new Error('Hiba a termékek betöltésekor');
       }
+      
       const data = await res.json();
+      console.log("Termékek betöltve:", data.products?.length || 0);
       setProducts(data.products || []);
       setError(null);
     } catch (error) {
@@ -36,11 +43,16 @@ export default function AdminProductManagementPage() {
 
   const loadCategories = async () => {
     try {
+      console.log("Kategóriák betöltése elkezdődött");
       const res = await fetch('/api/categories', { cache: 'no-store' });
+      console.log("Kategóriák API válasz:", res.status);
+      
       if (!res.ok) {
         throw new Error('Hiba a kategóriák betöltésekor');
       }
+      
       const data = await res.json();
+      console.log("Kategóriák betöltve:", data?.length || 0);
       setCategories(data || []);
     } catch (error) {
       console.error('Hiba a kategóriák betöltésekor:', error);
@@ -49,14 +61,20 @@ export default function AdminProductManagementPage() {
   };
 
   useEffect(() => {
+    console.log("Page status:", status);
+    console.log("Session:", session);
+    
     if (status === 'unauthenticated') {
+      console.log("Nincs bejelentkezve, átirányítás a login oldalra");
       redirect('/auth/login');
     }
 
     if (session?.user?.role && ['ADMIN', 'SUPERADMIN'].includes(session.user.role)) {
+      console.log("Admin felhasználó betöltése:", session.user.role);
       loadProducts();
       loadCategories();
     } else if (status === 'authenticated') {
+      console.log("Bejelentkezett, de nem admin, átirányítás a főoldalra");
       redirect('/');
     }
   }, [session, status]);

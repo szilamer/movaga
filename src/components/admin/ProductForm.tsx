@@ -158,14 +158,14 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
         </label>
         <div className="mt-2 flex flex-wrap gap-4">
           {formData.images.map((image, index) => (
-            <div key={index} className="group relative h-32 w-32">
+            <div key={`image-${index}-${new Date().getTime()}`} className="group relative h-32 w-32">
               <Image
                 src={image}
                 alt={`Termék kép ${index + 1}`}
                 fill
                 className="rounded-lg object-cover"
                 sizes="(max-width: 128px) 100vw, 128px"
-                unoptimized={image.includes('uploadthing')}
+                unoptimized={true}
               />
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 transition-all group-hover:bg-opacity-50">
                 <button

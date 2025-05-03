@@ -12,6 +12,14 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '12')
     const categoryId = searchParams.get('categoryId')
     const search = searchParams.get('search')
+    const isAdminRequest = searchParams.get('admin') === 'true'
+
+    // Ellenőrizzük, hogy admin kérés-e és megfelelő jogosultsággal rendelkezik-e
+    let isAdmin = false;
+    if (isAdminRequest) {
+      const session = await getServerSession(authOptions);
+      isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPERADMIN';
+    }
 
     const where = {
       ...(categoryId && { categoryId }),
@@ -21,8 +29,11 @@ export async function GET(request: Request) {
           { description: { contains: search, mode: 'insensitive' as const } },
         ],
       }),
-      status: 'ACTIVE',
+      // Csak akkor szűrünk ACTIVE státuszra, ha nem admin kérés
+      ...(!isAdmin && { status: 'ACTIVE' }),
     }
+
+    console.log("API query where:", where);
 
     const [products, total] = await Promise.all([
       prisma.product.findMany({
@@ -39,6 +50,7 @@ export async function GET(request: Request) {
       prisma.product.count({ where }),
     ])
 
+    console.log(`API products found: ${products.length}, total: ${total}`);
     return NextResponse.json({ products, total })
   } catch (error) {
     console.error('Hiba a termékek lekérdezésekor:', error)
