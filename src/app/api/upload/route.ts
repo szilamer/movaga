@@ -4,7 +4,6 @@ import { join } from 'path';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import { existsSync } from 'fs';
-import { useUploadThing } from '@/utils/uploadthing';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,41 +18,6 @@ export async function POST(request: NextRequest) {
 
     if (!files?.length) {
       return new NextResponse('No files received.', { status: 400 });
-    }
-
-    // If in production, use the Render deployment URL for upload URLs
-    if (process.env.NODE_ENV === 'production') {
-      try {
-        // For production, construct full URLs using the deployment URL
-        const uploadedFiles = [];
-        const uploadDir = join(process.cwd(), 'public/uploads/products');
-        
-        if (!existsSync(uploadDir)) {
-          await mkdir(uploadDir, { recursive: true });
-        }
-        
-        for (const file of files) {
-          const bytes = await file.arrayBuffer();
-          const buffer = Buffer.from(bytes);
-        
-          // Generálunk egy egyedi fájlnevet
-          const timestamp = Date.now();
-          const fileName = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
-          const path = join(uploadDir, fileName);
-          
-          // Mentjük a fájlt
-          await writeFile(path, buffer);
-          
-          // Visszaadjuk a publikus URL-t teljes URL-ként
-          const baseUrl = process.env.NEXT_PUBLIC_URL || '';
-          uploadedFiles.push(`${baseUrl}/uploads/products/${fileName}`);
-        }
-        
-        return NextResponse.json({ urls: uploadedFiles });
-      } catch (error) {
-        console.error('Error uploading files:', error);
-        return new NextResponse('Error uploading files.', { status: 500 });
-      }
     }
 
     // For development, use local filesystem with relative paths
@@ -80,7 +44,11 @@ export async function POST(request: NextRequest) {
       console.log(`File saved to: ${path}`);
       
       // Visszaadjuk a publikus URL-t
-      uploadedFiles.push(`/uploads/products/${fileName}`);
+      const fileUrl = process.env.NODE_ENV === 'production'
+        ? `${process.env.NEXT_PUBLIC_URL}/uploads/products/${fileName}`
+        : `/uploads/products/${fileName}`;
+      
+      uploadedFiles.push(fileUrl);
     }
 
     return NextResponse.json({ urls: uploadedFiles });

@@ -6,6 +6,7 @@ import { type ProductStatus } from '@prisma/client';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { ProductDescriptionSections } from './ProductDescriptionSections';
+import { UploadButton } from '@/lib/uploadthing';
 
 interface FormData {
   name: string;
@@ -178,35 +179,53 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
               </div>
             </div>
           ))}
-          <div className="relative flex h-32 w-32 items-center justify-center rounded-lg border-2 border-dashed border-gray-300">
-            {uploading ? (
-              <div className="flex flex-col items-center justify-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-                <span className="mt-2 text-sm text-gray-500">Feltöltés...</span>
-              </div>
-            ) : (
-              <>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  id="image-upload"
-                  disabled={uploading}
-                />
-                <label
-                  htmlFor="image-upload"
-                  className="flex cursor-pointer flex-col items-center justify-center text-sm text-gray-600"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                  </svg>
-                  <span>Képek feltöltése</span>
-                </label>
-              </>
-            )}
-          </div>
+          {process.env.NODE_ENV === 'production' ? (
+            <div className="flex flex-col items-start space-y-2">
+              <UploadButton
+                endpoint="productImage"
+                onClientUploadComplete={(res: Array<{ url: string }>) => {
+                  if (res) {
+                    const urls = res.map((file) => file.url);
+                    setFormData((prev) => ({ ...prev, images: [...prev.images, ...urls] }));
+                    toast.success("Képek sikeresen feltöltve!");
+                  }
+                }}
+                onUploadError={(error: Error) => {
+                  toast.error(`Hiba történt a feltöltés során: ${error.message}`);
+                }}
+              />
+            </div>
+          ) : (
+            <div className="relative flex h-32 w-32 items-center justify-center rounded-lg border-2 border-dashed border-gray-300">
+              {uploading ? (
+                <div className="flex flex-col items-center justify-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+                  <span className="mt-2 text-sm text-gray-500">Feltöltés...</span>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="image-upload"
+                    disabled={uploading}
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className="flex cursor-pointer flex-col items-center justify-center text-sm text-gray-600"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                    </svg>
+                    <span>Képek feltöltése</span>
+                  </label>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
