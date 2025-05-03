@@ -87,7 +87,7 @@ export function Navbar() {
                 </DropdownMenuItem>
                 {(session.user.role === 'ADMIN' || session.user.role === 'SUPERADMIN') && (
                   <DropdownMenuItem asChild>
-                    <Link href="/admin/product-management">Termékek kezelése</Link>
+                    <Link href="/admin">Adminisztráció</Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={handleSignOut}>
