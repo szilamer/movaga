@@ -1,8 +1,9 @@
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
+import { existsSync } from 'fs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,6 +21,13 @@ export async function POST(request: NextRequest) {
     }
 
     const uploadedFiles = [];
+    const uploadDir = join(process.cwd(), 'public/uploads/products');
+    
+    // Ellenőrizzük, hogy létezik-e a mappa, ha nem, létrehozzuk
+    if (!existsSync(uploadDir)) {
+      await mkdir(uploadDir, { recursive: true });
+      console.log(`Created directory: ${uploadDir}`);
+    }
 
     for (const file of files) {
       const bytes = await file.arrayBuffer();
@@ -28,10 +36,11 @@ export async function POST(request: NextRequest) {
       // Generálunk egy egyedi fájlnevet
       const timestamp = Date.now();
       const fileName = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
-      const path = join(process.cwd(), 'public/uploads/products', fileName);
+      const path = join(uploadDir, fileName);
       
       // Mentjük a fájlt
       await writeFile(path, buffer);
+      console.log(`File saved to: ${path}`);
       
       // Visszaadjuk a publikus URL-t
       uploadedFiles.push(`/uploads/products/${fileName}`);
