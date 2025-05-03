@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { type Category, type DescriptionSection } from '@/types';
 import { type ProductStatus } from '@prisma/client';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { ProductDescriptionSections } from './ProductDescriptionSections';
-import { UploadButton } from '@/lib/uploadthing';
+import { useUploadThing } from "@/lib/uploadthing";
+import { Button } from "@/components/ui/button";
+import { UploadCloud } from "lucide-react";
 
 interface FormData {
   name: string;
@@ -54,9 +56,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
           parsedDescriptionSections = initialData.descriptionSections;
         } else {
           // Try to coerce to the correct format if it's an object
-          parsedDescriptionSections = Array.isArray(initialData.descriptionSections) 
-            ? initialData.descriptionSections
-            : [];
+          parsedDescriptionSections = [];
         }
       }
     } catch (error) {
@@ -71,7 +71,22 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
   });
 
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { startUpload, isUploading } = useUploadThing("productImage", {
+    onClientUploadComplete: (res) => {
+      if (res && res.length > 0) {
+        const urls = res.map((file) => file.url);
+        console.log("Upload complete:", urls);
+        setFormData((prev) => ({ ...prev, images: [...prev.images, ...urls] }));
+        toast.success("Képek sikeresen feltöltve!");
+      }
+    },
+    onUploadError: (error) => {
+      console.error("Upload error:", error);
+      toast.error(`Hiba történt a feltöltés során: ${error.message}`);
+    },
+  });
 
   useEffect(() => {
     console.log('ProductForm mounted with initialData:', initialData);
@@ -159,36 +174,11 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.length) return;
-
-    try {
-      setUploading(true);
-
-      const uploadData = new FormData();
-      Array.from(e.target.files).forEach((file) => {
-        uploadData.append('files', file);
-      });
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: uploadData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Hiba a képfeltöltés során');
-      }
-
-      const data = await response.json();
-      const newImages = [...formData.images, ...data.urls];
-      setFormData((prev) => ({ ...prev, images: newImages }));
-      toast.success('Képek sikeresen feltöltve!');
-    } catch (error) {
-      console.error('Hiba a képfeltöltés során:', error);
-      toast.error('Hiba történt a képfeltöltés során');
-    } finally {
-      setUploading(false);
-    }
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const files = Array.from(e.target.files);
+    startUpload(files);
   };
 
   const handleRemoveImage = (index: number) => {
@@ -236,22 +226,24 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
           ))}
           
           <div className="flex flex-col items-start space-y-2">
-            <UploadButton
-              endpoint="productImage"
-              onClientUploadComplete={(res) => {
-                if (res && res.length > 0) {
-                  const urls = res.map((file) => file.url);
-                  console.log("Uploaded files:", urls);
-                  setFormData((prev) => ({ ...prev, images: [...prev.images, ...urls] }));
-                  toast.success("Képek sikeresen feltöltve!");
-                }
-              }}
-              onUploadError={(error: Error) => {
-                console.error("Upload error:", error);
-                toast.error(`Hiba történt a feltöltés során: ${error.message}`);
-              }}
-              config={{ mode: "auto" }}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              multiple
+              accept="image/*"
+              className="hidden"
             />
+            <Button 
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              variant="outline"
+              disabled={isUploading}
+              className="flex items-center gap-2"
+            >
+              <UploadCloud className="h-4 w-4" />
+              {isUploading ? 'Feltöltés...' : 'Képek feltöltése'}
+            </Button>
           </div>
           
         </div>
