@@ -2,12 +2,27 @@
 
 FROM node:18-slim AS deps
 WORKDIR /app
+# Add build essentials for native modules
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    python3 \
+    libssl-dev \
+    openssl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
 RUN npm ci
 
 FROM node:18-slim AS builder
 WORKDIR /app
-RUN apt-get update && apt-get install -y libssl3 openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+# Add build essentials for native modules
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    python3 \
+    libssl-dev \
+    openssl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
 RUN npx prisma generate
