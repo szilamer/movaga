@@ -27,6 +27,9 @@ export async function GET() {
       )
     }
 
+    // Admin/SuperAdmin specifikus vagy normál felhasználói adatok kezelése
+    const isAdmin = session.user.role === 'ADMIN' || session.user.role === 'SUPERADMIN';
+
     // Felhasználó adatainak lekérése
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -52,26 +55,58 @@ export async function GET() {
       )
     }
 
-    // Hálózati tagok lekérése
-    const networkMembers = await prisma.user.findMany({
-      where: { referrerId: user.id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        createdAt: true,
-        orders: {
-          where: {
-            createdAt: {
-              gte: new Date(new Date().setDate(1))
-            }
+    // Hálózati tagok lekérése - különböző lekérdezés admin felhasználóknak
+    let networkMembers: NetworkMember[] = [];
+    
+    if (isAdmin) {
+      // Admin esetén az összes felhasználót lekérjük kivéve önmagát
+      networkMembers = await prisma.user.findMany({
+        where: { 
+          id: { 
+            not: session.user.id 
           },
-          select: {
-            total: true
+          // SuperAdmin esetén minden felhasználó, ADMIN esetén csak a saját hálózat
+          ...(session.user.role === 'ADMIN' ? { referrerId: session.user.id } : {})
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          createdAt: true,
+          orders: {
+            where: {
+              createdAt: {
+                gte: new Date(new Date().setDate(1))
+              }
+            },
+            select: {
+              total: true
+            }
           }
         }
-      }
-    }) as NetworkMember[]
+      }) as NetworkMember[];
+    } else {
+      // Normál felhasználó esetén csak a közvetlen tagok
+      networkMembers = await prisma.user.findMany({
+        where: { referrerId: user.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          createdAt: true,
+          orders: {
+            where: {
+              createdAt: {
+                gte: new Date(new Date().setDate(1))
+              }
+            },
+            select: {
+              total: true
+            }
+          }
+        }
+      }) as NetworkMember[];
+    }
 
     // Havi forgalom számítása
     const monthlySales = user.orders.reduce((total: number, order: OrderWithItems) => total + order.total, 0)
@@ -87,46 +122,102 @@ export async function GET() {
 
     const totalNetworkSales = networkMembersSales.reduce((total: number, member: { monthlySales: number }) => total + member.monthlySales, 0)
 
-    // Kedvezmény szint számítása
-    let discountLevel = 0
-    if (monthlySales >= 100000) {
-      discountLevel = 30
-    } else if (monthlySales >= 50000) {
-      discountLevel = 15
-    }
-
-    // Frissítsük a felhasználó kedvezményszintjét az adatbázisban is
-    if (user.discountPercent !== discountLevel) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { discountPercent: discountLevel }
-      });
-    }
-
-    // Jutalék számítása (6%)
-    const commission = totalNetworkSales * 0.06
-
-    // Forgalom történet (dummy adat egyelőre)
-    const salesHistory = Array.from({ length: 6 }, (_, i) => {
-      const date = new Date()
-      date.setMonth(date.getMonth() - i)
-      return {
-        date: date.toISOString(),
-        amount: Math.floor(Math.random() * 100000)
+    // Kedvezmény szint számítása - Adminoknak mindig a legmagasabb
+    let discountLevel = isAdmin ? 100 : 0;
+    
+    if (!isAdmin) {
+      if (monthlySales >= 100000) {
+        discountLevel = 30;
+      } else if (monthlySales >= 50000) {
+        discountLevel = 15;
       }
-    }).reverse()
 
-    // Jutalék történet (dummy adat egyelőre)
+      // Frissítsük a felhasználó kedvezményszintjét az adatbázisban is
+      if (user.discountPercent !== discountLevel) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { discountPercent: discountLevel }
+        });
+      }
+    }
+
+    // Jutalék számítása (6%) - adminoknak a teljes forgalom után
+    const totalSales = isAdmin 
+      ? (await prisma.order.aggregate({
+          _sum: { total: true },
+          where: {
+            createdAt: {
+              gte: new Date(new Date().setDate(1))
+            }
+          }
+        }))._sum.total || 0
+      : totalNetworkSales;
+      
+    const commission = totalSales * 0.06;
+
+    // Forgalom történet - adminoknak valós adatok
+    let salesHistory = [];
+    
+    if (isAdmin) {
+      // Elmúlt 6 hónap valós forgalmi adatai az adminok számára
+      const lastSixMonths = [];
+      for (let i = 0; i < 6; i++) {
+        const date = new Date();
+        date.setDate(1); // Hónap első napja
+        date.setMonth(date.getMonth() - i);
+        
+        const endDate = new Date(date);
+        endDate.setMonth(endDate.getMonth() + 1);
+        
+        lastSixMonths.push({
+          startDate: date,
+          endDate: endDate,
+          monthLabel: date.toISOString()
+        });
+      }
+      
+      salesHistory = await Promise.all(
+        lastSixMonths.map(async ({startDate, endDate, monthLabel}) => {
+          const monthlyTotal = await prisma.order.aggregate({
+            _sum: { total: true },
+            where: {
+              createdAt: {
+                gte: startDate,
+                lt: endDate
+              }
+            }
+          });
+          
+          return {
+            date: monthLabel,
+            amount: monthlyTotal._sum.total || 0
+          };
+        })
+      );
+      salesHistory.reverse();
+    } else {
+      // Dummy adat a normál felhasználók számára
+      salesHistory = Array.from({ length: 6 }, (_, i) => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        return {
+          date: date.toISOString(),
+          amount: Math.floor(Math.random() * 100000)
+        };
+      }).reverse();
+    }
+
+    // Jutalék történet - adminoknak valós adat helyett
     const commissionHistory = Array.from({ length: 5 }, (_, i) => ({
       id: `comm_${i}`,
       amount: Math.floor(Math.random() * 10000),
       type: i % 2 === 0 ? 'personal' : 'network',
       createdAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
       description: i % 2 === 0 ? 'Személyes forgalom után' : 'Hálózati forgalom után'
-    }))
+    }));
 
     return NextResponse.json({
-      monthlySales,
+      monthlySales: isAdmin ? totalSales : monthlySales,
       networkSize: networkMembers.length,
       discountLevel,
       commission,
