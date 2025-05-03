@@ -70,6 +70,119 @@ async function getNetworkMembersRecursive(userId: string, depth: number = 0, max
   return membersWithSalesAndChildren;
 }
 
+// Admin felhasználó saját adatainak lekérése a hálózat gyökereként
+async function getAdminAsRoot(userId: string): Promise<NetworkMember> {
+  const admin = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      createdAt: true, 
+      role: true,
+      _count: {
+        select: {
+          referrals: true,
+        },
+      },
+    },
+  });
+  
+  if (!admin) {
+    throw new Error('Admin felhasználó nem található');
+  }
+  
+  const now = new Date()
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  
+  const monthlySales = await prisma.order.aggregate({
+    where: {
+      userId: admin.id,
+      createdAt: {
+        gte: firstDayOfMonth,
+      },
+    },
+    _sum: {
+      total: true,
+    },
+  });
+  
+  // Lekérjük az admin közvetlen hálózati tagjait
+  const children = await getNetworkMembersRecursive(admin.id);
+  
+  // Lekérjük a null referrer-rel rendelkező felhasználókat is, ha az admin SUPERADMIN
+  const nullReferrerUsers = admin.role === 'SUPERADMIN' ? 
+    await getNullReferrerUsers() : [];
+  
+  return {
+    id: admin.id,
+    name: admin.name,
+    email: admin.email,
+    monthlySales: monthlySales._sum.total || 0,
+    joinedAt: admin.createdAt,
+    role: admin.role,
+    referralCount: admin._count.referrals,
+    children: [...children, ...nullReferrerUsers.filter(u => u.id !== admin.id)],
+  };
+}
+
+// Null referrer-rel rendelkező felhasználók lekérése
+async function getNullReferrerUsers(): Promise<NetworkMember[]> {
+  const users = await prisma.user.findMany({
+    where: {
+      referrerId: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      createdAt: true,
+      role: true,
+      _count: {
+        select: {
+          referrals: true,
+        },
+      },
+    },
+  });
+  
+  const now = new Date()
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  
+  const usersWithSalesAndChildren: NetworkMember[] = await Promise.all(
+    users.map(async (user): Promise<NetworkMember> => {
+      const monthlySales = await prisma.order.aggregate({
+        where: {
+          userId: user.id,
+          createdAt: {
+            gte: firstDayOfMonth,
+          },
+        },
+        _sum: {
+          total: true,
+        },
+      });
+
+      const children: NetworkMember[] = await getNetworkMembersRecursive(user.id);
+
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        monthlySales: monthlySales._sum.total || 0,
+        joinedAt: user.createdAt,
+        role: user.role,
+        referralCount: user._count.referrals,
+        children,
+      };
+    })
+  );
+  
+  return usersWithSalesAndChildren;
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -81,29 +194,17 @@ export async function GET() {
       )
     }
 
-    // Admin esetén a teljes hálózatot lekérjük
-    let rootUserId = session.user.id;
-    if (session.user.role === 'ADMIN') {
-      const rootUsers = await prisma.user.findMany({
-        where: {
-          referrerId: null,
-        },
-        select: {
-          id: true,
-        },
-      });
+    // Admin esetén a felhasználót tesszük a hálózat gyökerébe
+    if (session.user.role === 'ADMIN' || session.user.role === 'SUPERADMIN') {
+      const adminWithNetwork = await getAdminAsRoot(session.user.id);
       
-      const allNetworks = await Promise.all(
-        rootUsers.map(user => getNetworkMembersRecursive(user.id))
-      );
-
       return NextResponse.json({
-        members: allNetworks.flat(),
+        members: [adminWithNetwork],
       });
     }
 
     // Normál felhasználó esetén csak a saját hálózatát kérjük le
-    const networkMembers = await getNetworkMembersRecursive(rootUserId);
+    const networkMembers = await getNetworkMembersRecursive(session.user.id);
 
     return NextResponse.json({
       members: networkMembers,
