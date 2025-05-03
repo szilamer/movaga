@@ -165,6 +165,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
                 fill
                 className="rounded-lg object-cover"
                 sizes="(max-width: 128px) 100vw, 128px"
+                unoptimized={image.includes('uploadthing')}
               />
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 transition-all group-hover:bg-opacity-50">
                 <button

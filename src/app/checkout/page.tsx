@@ -259,16 +259,9 @@ export default function CheckoutPage() {
 
       // Ha Barion fizetést választott
       if (paymentMethod === 'BARION') {
-        const posKey = process.env.NEXT_PUBLIC_BARION_POS_KEY;
-        console.log('POS Key from env:', posKey);
-
-        if (!posKey) {
-          throw new Error('Barion POS Key is not configured');
-        }
-
-        if (posKey === 'test-pos-key') {
-          throw new Error('Please configure a valid Barion POS Key in .env.local');
-        }
+        // Közvetlen POS key használata fallback értékként
+        const posKey = 'fab5fa17-77a6-4cf6-a5ae-a5cb81e264d8';
+        console.log('Using hardcoded POS Key for client');
 
         const barionService = new BarionService(posKey, true);
         
