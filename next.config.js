@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const webpack = require('webpack');
+const path = require('path');
 
 const nextConfig = {
   images: {
@@ -29,18 +29,44 @@ const nextConfig = {
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // Blokkolja a bcrypt-et és egyéb szerveroldali modulokat, 
-      // hogy ne próbálja meg beolvasni őket webpack
-      config.plugins.push(
-        new webpack.NormalModuleReplacementPlugin(
-          /bcrypt|@mapbox\/node-pre-gyp|aws-sdk|mock-aws-s3|nock/,
-          resource => {
-            resource.request = require.resolve('./src/lib/mocks/empty-module.js');
-          }
-        )
-      );
+      // 1. Módosítjuk a base rule-t, hogy kihagyja a node_modules-t
+      config.module.rules.forEach((rule) => {
+        if (rule.oneOf) {
+          rule.oneOf.forEach((oneOfRule) => {
+            if (oneOfRule.issuer && oneOfRule.issuer.and && oneOfRule.issuer.and.length > 0) {
+              oneOfRule.issuer.and = oneOfRule.issuer.and.map((issuer) => {
+                if (issuer.source) {
+                  return {
+                    ...issuer,
+                    source: issuer.source.replace(
+                      /^((?!node_modules).)*$/,
+                      /^((?!(node_modules\/(bcrypt|@mapbox\/node-pre-gyp))).)*$/
+                    ),
+                  };
+                }
+                return issuer;
+              });
+            }
+          });
+        }
+      });
 
-      // Fallback-ek minden node-specifikus modulra
+      // 2. Minden problémás modult kizárunk
+      config.module.rules.push({
+        test: /node_modules[\/\\](bcrypt|@mapbox\/node-pre-gyp|aws-sdk|mock-aws-s3|nock)/,
+        use: 'ignore-loader',
+      });
+
+      // 3. Külön kezelés a html fájlhoz
+      config.module.rules.push({
+        test: /\.html$/,
+        include: [
+          path.resolve(__dirname, 'node_modules/@mapbox/node-pre-gyp'),
+        ],
+        use: 'ignore-loader',
+      });
+
+      // 4. Fallback minden node-specifikus modulra
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
