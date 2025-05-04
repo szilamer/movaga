@@ -238,7 +238,8 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
       });
       
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`Upload failed: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ''}`);
       }
       
       const result = await response.json();
@@ -248,18 +249,29 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
           images: [...prev.images, ...result.urls] 
         }));
         
-        // Ellenőrizzük, hogy a képek placekitten képek-e
+        // Ellenőrizzük a képek típusát
         const isPlacekittenImages = result.urls.some((url: string) => url.includes('placekitten.com'));
+        const isCloudinaryImages = result.urls.some((url: string) => url.includes('cloudinary.com'));
         
         if (isPlacekittenImages) {
-          toast.success("Demo képek sikeresen hozzáadva! (A termelési környezetben a lokális feltöltések helyett placekitten.com demo képeket használunk)");
+          toast.success("Demo képek hozzáadva! (Fallback mód: placekitten.com)", {
+            description: "Ajánlott beállítani a Cloudinary API kulcsokat a valós képfeltöltéshez."
+          });
+        } else if (isCloudinaryImages) {
+          toast.success("Képek sikeresen feltöltve a Cloudinary szolgáltatásba!", {
+            description: "A képek felhőalapú tárolása biztosított."
+          });
         } else {
-          toast.success("Képek sikeresen feltöltve!");
+          toast.success("Képek sikeresen feltöltve!", {
+            description: "A képek a helyi fejlesztői tárhelyre kerültek."
+          });
         }
       }
     } catch (error) {
       console.error("Direct upload error:", error);
-      toast.error(`Hiba történt a feltöltés során: ${error instanceof Error ? error.message : 'Ismeretlen hiba'}`);
+      toast.error(`Hiba történt a feltöltés során: ${error instanceof Error ? error.message : 'Ismeretlen hiba'}`, {
+        description: "Kérjük, ellenőrizze a szerver naplófájlokat részletekért, vagy állítsa be a Cloudinary API-t."
+      });
     } finally {
       setUploadLoading(false);
     }

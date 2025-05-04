@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['localhost', 'movaga.onrender.com'], // Legacy fallback
+    domains: ['localhost', 'movaga.onrender.com', 'res.cloudinary.com'], // Legacy fallback
     remotePatterns: [
       {
         protocol: 'https',
@@ -10,6 +10,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'movaga.onrender.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
       },
       {
         protocol: 'http',
@@ -49,7 +53,7 @@ const nextConfig = {
   reactStrictMode: true,
 };
 
-// Log whether UploadThing environment variables are set
+// Log UploadThing environment variables status
 const hasUploadThingSecret = !!process.env.UPLOADTHING_SECRET;
 const hasUploadThingAppId = !!process.env.UPLOADTHING_APP_ID;
 
@@ -58,10 +62,26 @@ console.log(`UploadThing configuration status:
 - UPLOADTHING_APP_ID: ${hasUploadThingAppId ? 'Set' : 'Not set'}
 `);
 
+// Log Cloudinary status
+const hasCloudinaryConfig = !!(
+  process.env.CLOUDINARY_CLOUD_NAME && 
+  process.env.CLOUDINARY_API_KEY && 
+  process.env.CLOUDINARY_API_SECRET
+);
+
+console.log(`Cloudinary configuration status: ${hasCloudinaryConfig ? 'Available' : 'Not configured'}`);
+
+// Warning messages
 if (!hasUploadThingSecret || !hasUploadThingAppId) {
-  console.warn(`⚠️ UploadThing is not fully configured. Some features may not work as expected.
-To fix this, please set the UPLOADTHING_SECRET and UPLOADTHING_APP_ID environment variables in your Render.com dashboard.
-For more info, visit: https://docs.uploadthing.com/getting-started/appdir`);
+  console.warn(`⚠️ UploadThing is not fully configured. Some features may not work as expected.`);
+}
+
+if (!hasCloudinaryConfig) {
+  console.warn(`⚠️ Cloudinary is not configured. For production image uploads, please set the following environment variables:
+  - CLOUDINARY_CLOUD_NAME
+  - CLOUDINARY_API_KEY
+  - CLOUDINARY_API_SECRET
+Learn more at https://cloudinary.com/documentation/node_integration`);
 }
 
 module.exports = nextConfig; 

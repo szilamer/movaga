@@ -4,6 +4,7 @@ import { join } from 'path';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import { existsSync } from 'fs';
+import { uploadImageToCloudinary } from '@/lib/cloudinary';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,25 +21,55 @@ export async function POST(request: NextRequest) {
       return new NextResponse('No files received.', { status: 400 });
     }
 
-    // Ellenőrizzük, hogy termelési környezetben vagyunk-e
-    const isProduction = process.env.NODE_ENV === 'production';
+    // Ellenőrizzük a Cloudinary API konfigurációt
+    const hasCloudinaryConfig = !!(
+      process.env.CLOUDINARY_CLOUD_NAME && 
+      process.env.CLOUDINARY_API_KEY && 
+      process.env.CLOUDINARY_API_SECRET
+    );
+    
+    // Képek feltöltése és URL-ek tárolása
     const uploadedFiles = [];
+    
+    // Cloudinary feltöltés, ha van konfiguráció
+    if (hasCloudinaryConfig || process.env.NODE_ENV === 'production') {
+      console.log("Using Cloudinary for image upload");
 
-    if (isProduction) {
-      // Termelési környezetben placekitten.com képeket használunk (mivel a Render nem perzisztens)
-      console.log("Production environment detected - using placekitten.com for demo images");
-      
-      for (let i = 0; i < files.length; i++) {
-        // Véletlenszerű méretű cicaképek
-        const width = 400 + Math.floor(Math.random() * 200);
-        const height = 300 + Math.floor(Math.random() * 200);
-        const imageUrl = `https://placekitten.com/${width}/${height}`;
+      // Feltöltés a felhőbe
+      for (const file of files) {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
         
-        console.log(`Generated placeholder image: ${imageUrl}`);
-        uploadedFiles.push(imageUrl);
+        // Biztonságos fájlnév létrehozása
+        const timestamp = Date.now();
+        const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '');
+        const fileName = `${timestamp}-${originalName}`;
+        
+        try {
+          // Feltöltés a Cloudinary-ra
+          const result = await uploadImageToCloudinary(buffer, fileName);
+          
+          console.log(`Uploaded to Cloudinary: ${result.url} (ID: ${result.public_id})`);
+          uploadedFiles.push(result.url);
+        } catch (cloudinaryError) {
+          console.error('Cloudinary upload failed:', cloudinaryError);
+          
+          // Ha a Cloudinary feltöltés sikertelen, használjunk placekitten.com-ot fallback-ként
+          if (process.env.NODE_ENV === 'production') {
+            const width = 400 + Math.floor(Math.random() * 200);
+            const height = 300 + Math.floor(Math.random() * 200);
+            const fallbackUrl = `https://placekitten.com/${width}/${height}`;
+            
+            console.log(`Using fallback image due to Cloudinary error: ${fallbackUrl}`);
+            uploadedFiles.push(fallbackUrl);
+          } else {
+            throw cloudinaryError; // Fejlesztői környezetben továbbdobjuk a hibát
+          }
+        }
       }
     } else {
-      // Fejlesztési környezetben a fájlrendszerre mentünk
+      // Fejlesztői környezetben, ha nincs Cloudinary konfiguráció, használjuk a local upload-ot
+      console.log("Using local storage for development");
       const uploadDir = join(process.cwd(), 'public/uploads/products');
       
       // Ellenőrizzük, hogy létezik-e a mappa, ha nem, létrehozzuk
@@ -76,6 +107,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ urls: uploadedFiles });
   } catch (error) {
     console.error('Error uploading file:', error);
-    return new NextResponse('Error uploading file.', { status: 500 });
+    return new NextResponse(`Error uploading file: ${error instanceof Error ? error.message : 'Unknown error'}`, { status: 500 });
   }
 } 
