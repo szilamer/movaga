@@ -20,42 +20,57 @@ export async function POST(request: NextRequest) {
       return new NextResponse('No files received.', { status: 400 });
     }
 
-    // For development, use local filesystem with relative paths
+    // Ellenőrizzük, hogy termelési környezetben vagyunk-e
+    const isProduction = process.env.NODE_ENV === 'production';
     const uploadedFiles = [];
-    const uploadDir = join(process.cwd(), 'public/uploads/products');
-    
-    // Ellenőrizzük, hogy létezik-e a mappa, ha nem, létrehozzuk
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-      console.log(`Created directory: ${uploadDir}`);
-    }
 
-    // A BASE URL meghatározása
-    const baseUrl = process.env.NEXT_PUBLIC_URL || 
-                   (process.env.NODE_ENV === 'production' 
-                    ? 'https://movaga.onrender.com' 
-                    : 'http://localhost:3000');
-    
-    console.log(`Using base URL for uploads: ${baseUrl}`);
+    if (isProduction) {
+      // Termelési környezetben placekitten.com képeket használunk (mivel a Render nem perzisztens)
+      console.log("Production environment detected - using placekitten.com for demo images");
+      
+      for (let i = 0; i < files.length; i++) {
+        // Véletlenszerű méretű cicaképek
+        const width = 400 + Math.floor(Math.random() * 200);
+        const height = 300 + Math.floor(Math.random() * 200);
+        const imageUrl = `https://placekitten.com/${width}/${height}`;
+        
+        console.log(`Generated placeholder image: ${imageUrl}`);
+        uploadedFiles.push(imageUrl);
+      }
+    } else {
+      // Fejlesztési környezetben a fájlrendszerre mentünk
+      const uploadDir = join(process.cwd(), 'public/uploads/products');
+      
+      // Ellenőrizzük, hogy létezik-e a mappa, ha nem, létrehozzuk
+      if (!existsSync(uploadDir)) {
+        await mkdir(uploadDir, { recursive: true });
+        console.log(`Created directory: ${uploadDir}`);
+      }
 
-    for (const file of files) {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
+      // A BASE URL meghatározása
+      const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+      
+      console.log(`Using base URL for uploads: ${baseUrl}`);
 
-      // Generálunk egy egyedi fájlnevet
-      const timestamp = Date.now();
-      const fileName = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
-      const path = join(uploadDir, fileName);
-      
-      // Mentjük a fájlt
-      await writeFile(path, buffer);
-      console.log(`File saved to: ${path}`);
-      
-      // Mindig teljes URL-t adunk vissza
-      const fileUrl = `${baseUrl}/uploads/products/${fileName}`;
-      console.log(`Generated URL: ${fileUrl}`);
-      
-      uploadedFiles.push(fileUrl);
+      for (const file of files) {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        // Generálunk egy egyedi fájlnevet
+        const timestamp = Date.now();
+        const fileName = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+        const path = join(uploadDir, fileName);
+        
+        // Mentjük a fájlt
+        await writeFile(path, buffer);
+        console.log(`File saved to: ${path}`);
+        
+        // Mindig teljes URL-t adunk vissza
+        const fileUrl = `${baseUrl}/uploads/products/${fileName}`;
+        console.log(`Generated URL: ${fileUrl}`);
+        
+        uploadedFiles.push(fileUrl);
+      }
     }
 
     return NextResponse.json({ urls: uploadedFiles });

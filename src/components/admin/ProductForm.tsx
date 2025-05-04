@@ -247,7 +247,15 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
           ...prev, 
           images: [...prev.images, ...result.urls] 
         }));
-        toast.success("Képek sikeresen feltöltve!");
+        
+        // Ellenőrizzük, hogy a képek placekitten képek-e
+        const isPlacekittenImages = result.urls.some((url: string) => url.includes('placekitten.com'));
+        
+        if (isPlacekittenImages) {
+          toast.success("Demo képek sikeresen hozzáadva! (A termelési környezetben a lokális feltöltések helyett placekitten.com demo képeket használunk)");
+        } else {
+          toast.success("Képek sikeresen feltöltve!");
+        }
       }
     } catch (error) {
       console.error("Direct upload error:", error);
