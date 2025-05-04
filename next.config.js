@@ -44,4 +44,19 @@ const nextConfig = {
   reactStrictMode: true,
 };
 
+// Log whether UploadThing environment variables are set
+const hasUploadThingSecret = !!process.env.UPLOADTHING_SECRET;
+const hasUploadThingAppId = !!process.env.UPLOADTHING_APP_ID;
+
+console.log(`UploadThing configuration status: 
+- UPLOADTHING_SECRET: ${hasUploadThingSecret ? 'Set' : 'Not set'}
+- UPLOADTHING_APP_ID: ${hasUploadThingAppId ? 'Set' : 'Not set'}
+`);
+
+if (!hasUploadThingSecret || !hasUploadThingAppId) {
+  console.warn(`⚠️ UploadThing is not fully configured. Some features may not work as expected.
+To fix this, please set the UPLOADTHING_SECRET and UPLOADTHING_APP_ID environment variables in your Render.com dashboard.
+For more info, visit: https://docs.uploadthing.com/getting-started/appdir`);
+}
+
 module.exports = nextConfig; 

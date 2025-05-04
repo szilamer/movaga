@@ -71,8 +71,11 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [useDirectUpload, setUseDirectUpload] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // UploadThing configuration with error handling
   const { startUpload, isUploading } = useUploadThing("productImage", {
     onClientUploadComplete: (res) => {
       if (res && res.length > 0) {
@@ -83,10 +86,43 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
       }
     },
     onUploadError: (error) => {
-      console.error("Upload error:", error);
-      toast.error(`Hiba történt a feltöltés során: ${error.message}`);
+      console.error("UploadThing error:", error);
+      
+      // If we encounter a token error, switch to direct upload
+      if (error.message.includes("token") || error.message.includes("UploadThing not configured")) {
+        console.log("Switching to direct upload due to UploadThing configuration issue");
+        setUseDirectUpload(true);
+        toast.error("A felhő feltöltés nem érhető el, alternatív metódust használunk.");
+      } else {
+        toast.error(`Hiba történt a feltöltés során: ${error.message}`);
+      }
     },
   });
+
+  useEffect(() => {
+    // Check if we should use direct upload from the start
+    const checkUploadThingConfig = async () => {
+      try {
+        const response = await fetch('/api/uploadthing/check', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        const data = await response.json();
+        if (!data.configured) {
+          console.log("UploadThing not configured, using direct upload");
+          setUseDirectUpload(true);
+        }
+      } catch (error) {
+        console.error("Error checking UploadThing config:", error);
+        setUseDirectUpload(true);
+      }
+    };
+    
+    checkUploadThingConfig();
+  }, []);
 
   useEffect(() => {
     console.log('ProductForm mounted with initialData:', initialData);
@@ -174,11 +210,51 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
     }
   };
 
+  // UploadThing upload handler
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
     const files = Array.from(e.target.files);
-    startUpload(files);
+    
+    if (useDirectUpload) {
+      handleDirectUpload(files);
+    } else {
+      startUpload(files);
+    }
+  };
+  
+  // Direct file upload using the server API (fallback)
+  const handleDirectUpload = async (files: File[]) => {
+    setUploadLoading(true);
+    try {
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append('files', file);
+      });
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      if (result.urls && result.urls.length > 0) {
+        setFormData((prev) => ({ 
+          ...prev, 
+          images: [...prev.images, ...result.urls] 
+        }));
+        toast.success("Képek sikeresen feltöltve!");
+      }
+    } catch (error) {
+      console.error("Direct upload error:", error);
+      toast.error(`Hiba történt a feltöltés során: ${error instanceof Error ? error.message : 'Ismeretlen hiba'}`);
+    } finally {
+      setUploadLoading(false);
+    }
   };
 
   const handleRemoveImage = (index: number) => {
@@ -238,12 +314,15 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               variant="outline"
-              disabled={isUploading}
+              disabled={isUploading || uploadLoading}
               className="flex items-center gap-2"
             >
               <UploadCloud className="h-4 w-4" />
-              {isUploading ? 'Feltöltés...' : 'Képek feltöltése'}
+              {isUploading || uploadLoading ? 'Feltöltés...' : 'Képek feltöltése'}
             </Button>
+            {useDirectUpload && (
+              <p className="text-xs text-amber-500">Helyileg mentett képek, nem felhő tárhely</p>
+            )}
           </div>
           
         </div>
