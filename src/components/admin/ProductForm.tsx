@@ -278,15 +278,32 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
         <div className="mt-2 flex flex-wrap gap-4">
           {formData.images.map((image, index) => (
             <div key={`image-${index}-${new Date().getTime()}`} className="group relative h-32 w-32">
-              <Image
-                src={image}
-                alt={`Termék kép ${index + 1}`}
-                fill
-                className="rounded-lg object-cover"
-                sizes="(max-width: 128px) 100vw, 128px"
-                unoptimized={true}
-                priority
-              />
+              {/* Regular next/image for remote images (UploadThing) */}
+              {(image.startsWith('https://utfs.io') || image.startsWith('https://uploadthing.com')) ? (
+                <Image
+                  src={image}
+                  alt={`Termék kép ${index + 1}`}
+                  fill
+                  className="rounded-lg object-cover"
+                  sizes="(max-width: 128px) 100vw, 128px"
+                  unoptimized={true}
+                  priority
+                />
+              ) : (
+                /* Fallback img tag for local/dynamically uploaded images */
+                <div className="h-full w-full overflow-hidden rounded-lg">
+                  <img 
+                    src={image} 
+                    alt={`Termék kép ${index + 1}`}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      console.error(`Error loading image: ${image}`);
+                      e.currentTarget.src = '/placeholder-image.jpg';
+                      e.currentTarget.onerror = null;
+                    }}
+                  />
+                </div>
+              )}
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 transition-all group-hover:bg-opacity-50">
                 <button
                   type="button"

@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    domains: ['localhost', 'movaga.onrender.com'], // Legacy fallback
     remotePatterns: [
       {
         protocol: 'https',
@@ -13,6 +14,10 @@ const nextConfig = {
       {
         protocol: 'http',
         hostname: 'localhost',
+      },
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
       },
       {
         protocol: 'https',

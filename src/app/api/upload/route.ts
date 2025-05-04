@@ -30,6 +30,14 @@ export async function POST(request: NextRequest) {
       console.log(`Created directory: ${uploadDir}`);
     }
 
+    // A BASE URL meghatározása
+    const baseUrl = process.env.NEXT_PUBLIC_URL || 
+                   (process.env.NODE_ENV === 'production' 
+                    ? 'https://movaga.onrender.com' 
+                    : 'http://localhost:3000');
+    
+    console.log(`Using base URL for uploads: ${baseUrl}`);
+
     for (const file of files) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
@@ -43,10 +51,9 @@ export async function POST(request: NextRequest) {
       await writeFile(path, buffer);
       console.log(`File saved to: ${path}`);
       
-      // Visszaadjuk a publikus URL-t
-      const fileUrl = process.env.NODE_ENV === 'production'
-        ? `${process.env.NEXT_PUBLIC_URL}/uploads/products/${fileName}`
-        : `/uploads/products/${fileName}`;
+      // Mindig teljes URL-t adunk vissza
+      const fileUrl = `${baseUrl}/uploads/products/${fileName}`;
+      console.log(`Generated URL: ${fileUrl}`);
       
       uploadedFiles.push(fileUrl);
     }
