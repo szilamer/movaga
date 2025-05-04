@@ -2,45 +2,36 @@
 
 FROM node:18-slim AS deps
 WORKDIR /app
-# Add build essentials for native modules
+# Only essential build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    python3 \
-    libssl-dev \
-    openssl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Először csak a dependenciákat másoljuk
+# Copy dependency files first for better caching
 COPY package.json package-lock.json ./
-# Kihagyja a bcrypt és node-pre-gyp függőségeket a build során
 RUN npm ci
 
 FROM node:18-slim AS builder
 WORKDIR /app
-# Add build essentials for native modules
+# Only essential build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    python3 \
-    libssl-dev \
-    openssl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Minden fájlt átmásolunk
+# Copy everything
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
 
-# Generáljuk a Prisma klienst
+# Generate Prisma client
 RUN npx prisma generate
 
-# Futtatjuk a build parancsot
+# Build the application
 ENV NODE_ENV=production
 RUN npm run build
 
 FROM node:18-slim AS runner
 WORKDIR /app
-RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV PORT=3000

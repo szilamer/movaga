@@ -1,6 +1,7 @@
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import prisma from '@/lib/prisma'
+import { verifyPassword } from './auth'
 
 // Mock function that always returns true for the hardcoded admin
 function mockCompare(plain: string, hash: string): boolean {
@@ -59,9 +60,20 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        // Normal users cannot login in this simplified version
-        // For the admin we use the hardcoded credentials above
-        console.log('[Auth Debug] Password comparison failed');
+        // Verify the password for regular users
+        const isPasswordValid = await verifyPassword(credentials.password, user.hashedPassword);
+        
+        if (isPasswordValid) {
+          console.log('[Auth Debug] Password verification successful');
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role
+          }
+        }
+        
+        console.log('[Auth Debug] Password verification failed');
         return null
       }
     })
