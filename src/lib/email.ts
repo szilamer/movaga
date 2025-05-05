@@ -435,6 +435,14 @@ export async function sendOrderStatusEmail({
                   Array.isArray(error.rejected) && 
                   error.rejected.includes(to)) {
             console.warn(`[EMAIL] Email rejected by server (likely relay access denied) for recipient: ${to}`);
+            console.warn('[EMAIL] This is often a configuration issue with the SMTP server.');
+            console.warn('[EMAIL] Your SMTP server may need to be configured to allow relaying to external domains.');
+            console.warn('[EMAIL] Contact your email provider or consider using a transactional email service like SendGrid, Mailgun, or Amazon SES.');
+            
+            if (error.response && error.response.includes('Relay access denied')) {
+              console.error('[EMAIL] CONFIRMED RELAY ACCESS DENIED ERROR: The SMTP server is not configured to send to external domains.');
+              console.error('[EMAIL] In production, contact your email provider to allow relay access for your server IP.');
+            }
             
             // This is usually a permanent error, no point retrying
             break;
