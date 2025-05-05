@@ -1,201 +1,346 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { OrderStatus } from '@prisma/client';
+import { Textarea } from "@/components/ui/textarea"
+import { AlertCircle, CheckCircle2, Info } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-export default function AdminEmailDebugPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [orderId, setOrderId] = useState('');
-  const [orderStatus, setOrderStatus] = useState('PROCESSING');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
+export default function EmailDebugPage() {
+  return (
+    <div className="container mx-auto py-10">
+      <h1 className="text-2xl font-bold mb-6">Email Debugging Tools</h1>
 
-  const ORDER_STATUSES = {
-    PENDING: 'Függőben',
-    PROCESSING: 'Feldolgozás alatt',
-    SHIPPED: 'Kiszállítva',
-    COMPLETED: 'Teljesítve',
-    CANCELLED: 'Törölve',
-  };
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Send Test Email</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <EmailTestForm />
+          </CardContent>
+        </Card>
 
-  const handleSubmit = async (e: React.FormEvent) => {
+        <Card>
+          <CardHeader>
+            <CardTitle>Email Configuration</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ConfigurationCheck />
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Order Status Email Test</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OrderStatusEmailForm />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function EmailTestForm() {
+  const [email, setEmail] = React.useState("");
+  const [status, setStatus] = React.useState<OrderStatus>("PROCESSING");
+  const [loading, setLoading] = React.useState(false);
+  const [result, setResult] = React.useState<any>(null);
+  const [error, setError] = React.useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setResult(null);
 
     try {
-      const response = await fetch('/api/debug/order-email-test', {
-        method: 'POST',
+      const response = await fetch("/api/debug/send-test-email", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: email || undefined,
-          orderId: orderId || undefined,
-          status: orderStatus,
+          email,
+          orderStatus: status,
+          reinitialize: true,
         }),
       });
 
       const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Something went wrong');
+        throw new Error(data.error || 'Unknown error occurred');
       }
 
       setResult(data);
     } catch (err) {
-      console.error('Error testing email:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const testEmailConfig = async () => {
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="email">Recipient Email</Label>
+        <Input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter email address"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="status">Email Template</Label>
+        <Select value={status} onValueChange={(value) => setStatus(value as OrderStatus)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select status" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.values(OrderStatus).map((status) => (
+              <SelectItem key={status} value={status}>{status}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Button type="submit" disabled={loading} className="w-full">
+        {loading ? "Sending..." : "Send Test Email"}
+      </Button>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {result && (
+        <Alert variant={result.success ? "default" : "destructive"}>
+          <div className="flex items-start">
+            {result.success ? (
+              <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 mr-2" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 mr-2" />
+            )}
+            <div>
+              <AlertTitle>{result.success ? "Success" : "Failed"}</AlertTitle>
+              <AlertDescription>{result.message}</AlertDescription>
+            </div>
+          </div>
+        </Alert>
+      )}
+    </form>
+  );
+}
+
+function OrderStatusEmailForm() {
+  const [email, setEmail] = React.useState("");
+  const [orderId, setOrderId] = React.useState("");
+  const [status, setStatus] = React.useState<OrderStatus>("PROCESSING");
+  const [loading, setLoading] = React.useState(false);
+  const [result, setResult] = React.useState<any>(null);
+  const [error, setError] = React.useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     setLoading(true);
     setError(null);
     setResult(null);
 
     try {
-      const response = await fetch('/api/debug/email-test');
+      const params = new URLSearchParams();
+      params.append('status', status);
+      if (orderId) params.append('orderId', orderId);
+      if (email) params.append('email', email);
+
+      const response = await fetch(`/api/debug/test-order-status-email?${params.toString()}`);
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Something went wrong');
+        throw new Error(data.error || 'Unknown error occurred');
       }
 
       setResult(data);
     } catch (err) {
-      console.error('Error testing email configuration:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-8 text-2xl font-bold">Email Debugging</h1>
-
-      <div className="space-y-8">
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-xl font-semibold">Test Order Status Email</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="mb-1 block text-sm font-medium">
-                Email cím (opcionális, ha rendelés azonosító meg van adva)
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="pelda@email.com"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="orderId" className="mb-1 block text-sm font-medium">
-                Rendelés azonosító (opcionális, ha email meg van adva)
-              </label>
-              <input
-                type="text"
-                id="orderId"
-                value={orderId}
-                onChange={(e) => setOrderId(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="pl. order-123"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="orderStatus" className="mb-1 block text-sm font-medium">
-                Rendelés státusz
-              </label>
-              <select
-                id="orderStatus"
-                value={orderStatus}
-                onChange={(e) => setOrderStatus(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                {Object.entries(ORDER_STATUSES).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-wrap gap-4">
-              <button
-                type="submit"
-                disabled={loading || (!email && !orderId)}
-                className="rounded-md bg-primary px-4 py-2 text-white transition hover:bg-primary/90 disabled:opacity-50"
-              >
-                {loading ? 'Küldés...' : 'Email küldése'}
-              </button>
-
-              <button
-                type="button"
-                onClick={testEmailConfig}
-                disabled={loading}
-                className="rounded-md border border-primary bg-white px-4 py-2 text-primary transition hover:bg-gray-50 disabled:opacity-50"
-              >
-                SMTP konfiguráció teszt
-              </button>
-              
-              <button
-                type="button"
-                onClick={async () => {
-                  setLoading(true);
-                  setError(null);
-                  setResult(null);
-                  
-                  try {
-                    const response = await fetch('/api/debug/check-email-config');
-                    const data = await response.json();
-                    
-                    if (!response.ok) {
-                      throw new Error(data.error || 'Something went wrong');
-                    }
-                    
-                    setResult(data);
-                  } catch (err) {
-                    console.error('Error checking email configuration:', err);
-                    setError(err instanceof Error ? err.message : 'Unknown error occurred');
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                disabled={loading}
-                className="rounded-md border border-gray-300 bg-gray-50 px-4 py-2 text-gray-700 transition hover:bg-gray-100 disabled:opacity-50"
-              >
-                Ellenőrizd a konfigurációt
-              </button>
-            </div>
-          </form>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="orderId">Order ID</Label>
+          <Input
+            id="orderId"
+            value={orderId}
+            onChange={(e) => setOrderId(e.target.value)}
+            placeholder="Enter order ID"
+          />
         </div>
 
-        {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
-            <p className="font-medium">Hiba történt</p>
-            <p>{error}</p>
-          </div>
-        )}
-
-        {result && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 className="mb-2 text-lg font-medium">Eredmény:</h3>
-            <pre className="whitespace-pre-wrap rounded-md bg-gray-100 p-4 text-sm">
-              {JSON.stringify(result, null, 2)}
-            </pre>
-          </div>
-        )}
+        <div className="space-y-2">
+          <Label htmlFor="emailOverride">Override Email (Optional)</Label>
+          <Input
+            id="emailOverride"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Optional: Override recipient email"
+          />
+        </div>
       </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="orderStatus">Order Status</Label>
+        <Select value={status} onValueChange={(value) => setStatus(value as OrderStatus)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select status" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.values(OrderStatus).map((status) => (
+              <SelectItem key={status} value={status}>{status}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Button type="submit" disabled={loading || (!email && !orderId)} className="w-full">
+        {loading ? "Sending..." : "Send Test Order Email"}
+      </Button>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {result && (
+        <div className="space-y-4">
+          <Alert variant={result.success ? "default" : "destructive"}>
+            <div className="flex items-start">
+              {result.success ? (
+                <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 mr-2" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 mr-2" />
+              )}
+              <div>
+                <AlertTitle>{result.success ? "Success" : "Failed"}</AlertTitle>
+                <AlertDescription>{result.message}</AlertDescription>
+              </div>
+            </div>
+          </Alert>
+
+          {result.order && (
+            <div className="border rounded p-4 text-sm">
+              <h3 className="font-medium mb-2">Order Details</h3>
+              <ul className="space-y-1">
+                <li><span className="font-medium">ID:</span> {result.order.id}</li>
+                <li><span className="font-medium">Status:</span> {result.order.status}</li>
+                <li><span className="font-medium">Total:</span> {result.order.total}</li>
+                <li><span className="font-medium">Email:</span> {result.order.userEmail || 'N/A'}</li>
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </form>
+  );
+}
+
+function ConfigurationCheck() {
+  const [loading, setLoading] = React.useState(false);
+  const [config, setConfig] = React.useState<any>(null);
+  const [error, setError] = React.useState<string | null>(null);
+
+  async function checkConfiguration() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/debug/check-email-config");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Unknown error occurred');
+      }
+
+      setConfig(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  React.useEffect(() => {
+    checkConfiguration();
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <Button 
+        variant="outline" 
+        onClick={checkConfiguration} 
+        disabled={loading}
+        className="w-full"
+      >
+        {loading ? "Checking..." : "Refresh Configuration"}
+      </Button>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {config && (
+        <div className="space-y-4">
+          <Alert variant={config.status === 'complete' ? "default" : "warning"}>
+            <Info className="h-4 w-4" />
+            <AlertTitle>Configuration Status: {config.status}</AlertTitle>
+            <AlertDescription>{config.message}</AlertDescription>
+          </Alert>
+
+          <div className="border rounded p-4">
+            <h3 className="font-medium mb-2">Environment Variables</h3>
+            <div className="space-y-2">
+              {Object.entries(config.configuration).map(([key, value]: [string, any]) => (
+                <div key={key} className="flex items-center justify-between text-sm">
+                  <span className="font-mono">{key}</span>
+                  <span className={`font-medium ${value.exists ? 'text-green-600' : 'text-red-600'}`}>
+                    {value.exists ? (value.value || 'Set') : 'Missing'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-sm text-muted-foreground">
+            <p>Environment: {config.environment?.NODE_ENV || 'unknown'}</p>
+            <p>Last checked: {new Date(config.timestamp).toLocaleString()}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

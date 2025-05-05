@@ -2,6 +2,8 @@ import nodemailer from 'nodemailer';
 import { formatPrice } from './utils';
 import prisma from './prisma';
 import { OrderStatus } from '@prisma/client';
+import dns from 'dns';
+import net from 'net';
 
 // Check if the required email configuration exists
 const hasValidEmailConfig = () => {
@@ -19,11 +21,67 @@ const hasValidEmailConfig = () => {
 // Create transport only if configuration exists
 let transporter: nodemailer.Transporter | null = null;
 
-if (hasValidEmailConfig()) {
+// Helper function to test connection to SMTP server
+async function testSmtpConnection(host: string, port: number): Promise<{ success: boolean, message: string }> {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    const timeout = 5000; // 5 seconds timeout
+    
+    // Handle timeout
+    const timer = setTimeout(() => {
+      socket.destroy();
+      resolve({ success: false, message: `Connection timed out after ${timeout}ms` });
+    }, timeout);
+    
+    socket.connect(port, host, () => {
+      clearTimeout(timer);
+      socket.destroy();
+      resolve({ success: true, message: `Successfully connected to ${host}:${port}` });
+    });
+    
+    socket.on('error', (err) => {
+      clearTimeout(timer);
+      resolve({ success: false, message: `Connection error: ${err.message}` });
+    });
+  });
+}
+
+// Initialize email transporter with diagnostics
+async function initializeTransporter(): Promise<void> {
+  if (!hasValidEmailConfig()) {
+    console.warn('Email service disabled due to missing configuration');
+    return;
+  }
+
   try {
+    const host = process.env.SMTP_HOST || '';
+    const port = Number(process.env.SMTP_PORT || 465);
+    
+    // Verify DNS resolution
+    try {
+      const addresses = await new Promise<string[]>((resolve, reject) => {
+        dns.resolve(host, (err, addresses) => {
+          if (err) reject(err);
+          else resolve(addresses);
+        });
+      });
+      console.log(`SMTP host ${host} resolves to:`, addresses);
+    } catch (dnsErr) {
+      console.error(`Failed to resolve SMTP host ${host}:`, dnsErr);
+    }
+    
+    // Test raw socket connection
+    const connectionTest = await testSmtpConnection(host, port);
+    console.log(`SMTP connection test: ${connectionTest.message}`);
+    
+    if (!connectionTest.success) {
+      console.error('SMTP connection test failed. Email service may not work.');
+    }
+    
+    // Create transporter anyway for potential future success
     transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
+      host,
+      port,
       secure: true,
       auth: {
         user: process.env.SMTP_USER,
@@ -32,23 +90,38 @@ if (hasValidEmailConfig()) {
       tls: {
         // Do not reject invalid certificates
         rejectUnauthorized: false
-      }
+      },
+      // Add debug option in development
+      ...(process.env.NODE_ENV !== 'production' ? { debug: true } : {})
     });
     
     // Log configuration (without password)
     console.log('Email transporter configured:', {
-      host: process.env.SMTP_HOST, 
-      port: process.env.SMTP_PORT, 
+      host, 
+      port, 
       user: process.env.SMTP_USER,
       from: process.env.SMTP_FROM || process.env.SMTP_USER
     });
+    
+    // Test verification in development
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        const verified = await transporter.verify();
+        console.log('SMTP Verification:', verified ? 'Success' : 'Failed');
+      } catch (verifyErr) {
+        console.error('SMTP Verification failed:', verifyErr);
+      }
+    }
   } catch (error) {
     console.error('Failed to create email transporter:', error);
     transporter = null;
   }
-} else {
-  console.warn('Email service disabled due to missing configuration');
 }
+
+// Initialize transporter on module load
+initializeTransporter().catch(err => {
+  console.error('Failed to initialize email transporter:', err);
+});
 
 interface OrderEmailParams {
   to: string;
@@ -156,6 +229,42 @@ const defaultTemplates: Record<string, { subject: string, content: string }> = {
 };
 
 /**
+ * Reinitializes the SMTP transporter
+ * Can be called if connection was lost or before critical sends
+ */
+export async function reinitializeEmailTransporter(): Promise<boolean> {
+  try {
+    await initializeTransporter();
+    return !!transporter;
+  } catch (error) {
+    console.error('Failed to reinitialize email transporter:', error);
+    return false;
+  }
+}
+
+/**
+ * Gets the current email configuration status
+ */
+export function getEmailConfigStatus() {
+  const requiredVars = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'];
+  
+  return {
+    configured: hasValidEmailConfig(),
+    transporterInitialized: !!transporter,
+    configuration: requiredVars.reduce((acc, varName) => {
+      acc[varName] = {
+        exists: !!process.env[varName],
+        value: varName === 'SMTP_PASS' 
+          ? (process.env[varName] ? '********' : undefined)
+          : process.env[varName]
+      };
+      return acc;
+    }, {} as Record<string, { exists: boolean, value?: string }>),
+    environment: process.env.NODE_ENV || 'unknown'
+  };
+}
+
+/**
  * Sends an order status notification email
  */
 export async function sendOrderStatusEmail({
@@ -167,17 +276,24 @@ export async function sendOrderStatusEmail({
   orderStatus,
 }: OrderEmailParams) {
   try {
-    console.log(`Attempting to send email: status = ${orderStatus}, recipient = ${to}, order = ${orderNumber}`);
+    console.log(`[EMAIL] Attempting to send email: status = ${orderStatus}, recipient = ${to}, order = ${orderNumber}`);
     
     // Check if the email service is available
     if (!transporter) {
-      console.error('Email service is not available - check SMTP configuration');
-      return false;
+      console.error('[EMAIL] Email service is not available - check SMTP configuration');
+      
+      // Try to reinitialize once
+      const reinitialized = await reinitializeEmailTransporter();
+      if (!reinitialized || !transporter) {
+        console.error('[EMAIL] Failed to reinitialize email transporter');
+        return false;
+      }
+      console.log('[EMAIL] Successfully reinitialized email transporter');
     }
 
     // Validate recipient email
     if (!to || !to.includes('@')) {
-      console.error(`Invalid recipient email address: ${to}`);
+      console.error(`[EMAIL] Invalid recipient email address: ${to}`);
       return false;
     }
     
@@ -187,6 +303,7 @@ export async function sendOrderStatusEmail({
     try {
       // Try to find the email template for the given order status using raw query
       // This avoids TypeScript model naming issues
+      console.log(`[EMAIL] Looking for template with status: ${orderStatus}`);
       const templates = await prisma.$queryRaw`
         SELECT * FROM "EmailTemplate" 
         WHERE "triggerStatus" = ${orderStatus}::text::"OrderStatus" 
@@ -197,11 +314,11 @@ export async function sendOrderStatusEmail({
       const template = Array.isArray(templates) && templates.length > 0 ? templates[0] : null;
 
       if (template) {
-        console.log(`Email template found in database: ${template.name}`);
+        console.log(`[EMAIL] Email template found in database: ${template.name}`);
         subject = template.subject;
         html = template.content;
       } else {
-        console.log(`No active email template found for order status: ${orderStatus}, using fallback`);
+        console.log(`[EMAIL] No active email template found for order status: ${orderStatus}, using fallback`);
         // Fall back to default templates
         const defaultTemplate = defaultTemplates[orderStatus];
         if (defaultTemplate) {
@@ -222,7 +339,7 @@ export async function sendOrderStatusEmail({
         }
       }
     } catch (dbError) {
-      console.error('Error retrieving email template:', dbError);
+      console.error('[EMAIL] Error retrieving email template:', dbError);
       // Use fallback templates if database query fails
       const defaultTemplate = defaultTemplates[orderStatus];
       if (defaultTemplate) {
@@ -254,50 +371,99 @@ export async function sendOrderStatusEmail({
     subject = replacePlaceholders(subject, data);
     html = replacePlaceholders(html, data);
 
-    console.log(`Email content prepared, sending to: ${to}`);
+    console.log(`[EMAIL] Email content prepared, sending to: ${to}`);
 
-    // Send email
-    try {
-      const info = await transporter.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER || 'info@movaga.hu',
-        to,
-        subject,
-        html,
-      });
-
-      console.log(`Email successfully sent: to=${to}, order=${orderNumber}, status=${orderStatus}, messageId=${info.messageId}`);
-      return true;
-    } catch (sendError) {
-      console.error('Error sending email via SMTP:', sendError);
-      
-      // Check for relay access denied error - this often happens with test emails
-      if (typeof sendError === 'object' && 
-          sendError !== null && 
-          'code' in sendError && 
-          sendError.code === 'EENVELOPE' && 
-          'rejected' in sendError && 
-          Array.isArray(sendError.rejected) && 
-          sendError.rejected.includes(to)) {
-        console.warn(`Email rejected by server (likely relay access denied) for recipient: ${to}`);
+    // Send email with multiple retries
+    let success = false;
+    let lastError = null;
+    const maxRetries = 2;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      if (attempt > 0) {
+        console.log(`[EMAIL] Retry attempt ${attempt} of ${maxRetries}`);
+        // Wait briefly before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Reinitialize transporter on retry
+        if (attempt === 1) {
+          console.log('[EMAIL] Reinitializing transporter before retry');
+          await reinitializeEmailTransporter();
+        }
       }
       
-      // Log more detailed error information
-      if (sendError instanceof Error) {
-        console.error('Error details:', {
-          message: sendError.message,
-          name: sendError.name,
-          stack: sendError.stack,
+      try {
+        const info = await transporter.sendMail({
+          from: process.env.SMTP_FROM || process.env.SMTP_USER || 'info@movaga.hu',
+          to,
+          subject,
+          html,
         });
+
+        console.log(`[EMAIL] Email successfully sent: to=${to}, order=${orderNumber}, status=${orderStatus}, messageId=${info.messageId}`);
+        success = true;
+        break;
+      } catch (sendError) {
+        lastError = sendError;
+        
+        // Special handling for common SMTP errors
+        if (typeof sendError === 'object' && sendError !== null) {
+          const error = sendError as any;
+          
+          // Connection refused errors
+          if (error.code === 'ESOCKET' || error.code === 'ECONNREFUSED') {
+            console.error(`[EMAIL] Connection to SMTP server failed: ${error.message}`);
+            
+            // Test raw connection on error to diagnose
+            try {
+              const host = process.env.SMTP_HOST!;
+              const port = Number(process.env.SMTP_PORT!);
+              const connectionTest = await testSmtpConnection(host, port);
+              console.log(`[EMAIL] SMTP connection diagnostic: ${connectionTest.message}`);
+            } catch (diagErr) {
+              console.error('[EMAIL] Connection diagnostic failed:', diagErr);
+            }
+          }
+          
+          // Authentication errors
+          else if (error.code === 'EAUTH') {
+            console.error('[EMAIL] SMTP authentication failed. Check credentials.');
+          }
+          
+          // Relay access denied (common with test emails)
+          else if (error.code === 'EENVELOPE' && 
+                  'rejected' in error && 
+                  Array.isArray(error.rejected) && 
+                  error.rejected.includes(to)) {
+            console.warn(`[EMAIL] Email rejected by server (likely relay access denied) for recipient: ${to}`);
+            
+            // This is usually a permanent error, no point retrying
+            break;
+          }
+        }
+        
+        // Log detailed error
+        console.error('[EMAIL] Error sending email via SMTP:', sendError);
+        if (sendError instanceof Error) {
+          console.error('[EMAIL] Error details:', {
+            message: sendError.message,
+            name: sendError.name,
+            stack: sendError.stack,
+          });
+        }
       }
-      
-      return false;
     }
+    
+    if (!success && lastError) {
+      console.error('[EMAIL] All retry attempts failed for sending email to:', to);
+    }
+    
+    return success;
   } catch (error) {
-    console.error('Error in email sending function:', error);
+    console.error('[EMAIL] Unexpected error in email sending function:', error);
     // Log additional error details if available
     if (error instanceof Error) {
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
+      console.error('[EMAIL] Error message:', error.message);
+      console.error('[EMAIL] Error stack:', error.stack);
     }
     return false;
   }
