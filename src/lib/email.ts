@@ -3,28 +3,52 @@ import { formatPrice } from './utils';
 import prisma from './prisma';
 import { OrderStatus } from '@prisma/client';
 
-// A transporter létrehozása kiegészítve hibakezeléssel és TLS beállításokkal
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: true,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: {
-    // Ne utasítsa el az érvénytelen tanúsítványokat
-    rejectUnauthorized: false
+// Check if the required email configuration exists
+const hasValidEmailConfig = () => {
+  const requiredVars = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS'];
+  const missingVars = requiredVars.filter(varName => !process.env[varName]);
+  
+  if (missingVars.length > 0) {
+    console.error(`Missing required email configuration: ${missingVars.join(', ')}`);
+    return false;
   }
-});
+  
+  return true;
+};
 
-// Konfiguráció naplózása (jelszó nélkül)
-console.log('Email transporter konfigurálva:', {
-  host: process.env.SMTP_HOST, 
-  port: process.env.SMTP_PORT, 
-  user: process.env.SMTP_USER,
-  from: process.env.SMTP_FROM
-});
+// Create transport only if configuration exists
+let transporter: nodemailer.Transporter | null = null;
+
+if (hasValidEmailConfig()) {
+  try {
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
+      secure: true,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+      tls: {
+        // Do not reject invalid certificates
+        rejectUnauthorized: false
+      }
+    });
+    
+    // Log configuration (without password)
+    console.log('Email transporter configured:', {
+      host: process.env.SMTP_HOST, 
+      port: process.env.SMTP_PORT, 
+      user: process.env.SMTP_USER,
+      from: process.env.SMTP_FROM || process.env.SMTP_USER
+    });
+  } catch (error) {
+    console.error('Failed to create email transporter:', error);
+    transporter = null;
+  }
+} else {
+  console.warn('Email service disabled due to missing configuration');
+}
 
 interface OrderEmailParams {
   to: string;
@@ -143,29 +167,41 @@ export async function sendOrderStatusEmail({
   orderStatus,
 }: OrderEmailParams) {
   try {
-    console.log(`Megkísérlem email küldését: státusz = ${orderStatus}, címzett = ${to}, rendelés = ${orderNumber}`);
+    console.log(`Attempting to send email: status = ${orderStatus}, recipient = ${to}, order = ${orderNumber}`);
+    
+    // Check if the email service is available
+    if (!transporter) {
+      console.error('Email service is not available - check SMTP configuration');
+      return false;
+    }
+
+    // Validate recipient email
+    if (!to || !to.includes('@')) {
+      console.error(`Invalid recipient email address: ${to}`);
+      return false;
+    }
     
     let subject = '';
     let html = '';
     
     try {
-      // Try to find the email template for the given order status
-      const template = await prisma.emailTemplate.findFirst({
-        where: {
-          triggerStatus: orderStatus as OrderStatus,
-          isActive: true,
-        },
-      }).catch(err => {
-        console.error('Error querying email template:', err);
-        return null;
-      });
+      // Try to find the email template for the given order status using raw query
+      // This avoids TypeScript model naming issues
+      const templates = await prisma.$queryRaw`
+        SELECT * FROM "EmailTemplate" 
+        WHERE "triggerStatus" = ${orderStatus}::text::"OrderStatus" 
+        AND "isActive" = true 
+        LIMIT 1
+      `;
+      
+      const template = Array.isArray(templates) && templates.length > 0 ? templates[0] : null;
 
       if (template) {
-        console.log(`Email sablon megtalálva az adatbázisban: ${template.name}`);
+        console.log(`Email template found in database: ${template.name}`);
         subject = template.subject;
         html = template.content;
       } else {
-        console.log(`Nincs aktív email sablon a következő rendelési státuszhoz az adatbázisban: ${orderStatus}, fallback használata`);
+        console.log(`No active email template found for order status: ${orderStatus}, using fallback`);
         // Fall back to default templates
         const defaultTemplate = defaultTemplates[orderStatus];
         if (defaultTemplate) {
@@ -186,7 +222,7 @@ export async function sendOrderStatusEmail({
         }
       }
     } catch (dbError) {
-      console.error('Hiba történt a sablon lekérése során:', dbError);
+      console.error('Error retrieving email template:', dbError);
       // Use fallback templates if database query fails
       const defaultTemplate = defaultTemplates[orderStatus];
       if (defaultTemplate) {
@@ -218,34 +254,50 @@ export async function sendOrderStatusEmail({
     subject = replacePlaceholders(subject, data);
     html = replacePlaceholders(html, data);
 
-    console.log(`Email tartalom elkészítve, küldés a következő címre: ${to}`);
-
-    // Check if email configuration exists
-    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.error('Hiányzó SMTP konfiguráció:', { 
-        host: process.env.SMTP_HOST, 
-        user: process.env.SMTP_USER, 
-        pass: process.env.SMTP_PASS ? 'beállítva' : 'hiányzik' 
-      });
-      return false;
-    }
+    console.log(`Email content prepared, sending to: ${to}`);
 
     // Send email
-    const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || 'info@movaga.hu',
-      to,
-      subject,
-      html,
-    });
+    try {
+      const info = await transporter.sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER || 'info@movaga.hu',
+        to,
+        subject,
+        html,
+      });
 
-    console.log(`Email sikeresen elküldve: ${to}, rendelés: ${orderNumber}, státusz: ${orderStatus}, messageId: ${info.messageId}`);
-    return true;
+      console.log(`Email successfully sent: to=${to}, order=${orderNumber}, status=${orderStatus}, messageId=${info.messageId}`);
+      return true;
+    } catch (sendError) {
+      console.error('Error sending email via SMTP:', sendError);
+      
+      // Check for relay access denied error - this often happens with test emails
+      if (typeof sendError === 'object' && 
+          sendError !== null && 
+          'code' in sendError && 
+          sendError.code === 'EENVELOPE' && 
+          'rejected' in sendError && 
+          Array.isArray(sendError.rejected) && 
+          sendError.rejected.includes(to)) {
+        console.warn(`Email rejected by server (likely relay access denied) for recipient: ${to}`);
+      }
+      
+      // Log more detailed error information
+      if (sendError instanceof Error) {
+        console.error('Error details:', {
+          message: sendError.message,
+          name: sendError.name,
+          stack: sendError.stack,
+        });
+      }
+      
+      return false;
+    }
   } catch (error) {
-    console.error('Hiba történt az email küldése során:', error);
-    // Ha van további részletes információ, azt is naplózzuk
+    console.error('Error in email sending function:', error);
+    // Log additional error details if available
     if (error instanceof Error) {
-      console.error('Hiba üzenet:', error.message);
-      console.error('Hiba stack:', error.stack);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
     }
     return false;
   }

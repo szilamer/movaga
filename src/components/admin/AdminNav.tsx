@@ -13,8 +13,10 @@ import {
   PhotoIcon,
   TruckIcon,
   EnvelopeIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline'
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 
 const navItems = [
   {
@@ -64,9 +66,27 @@ const navItems = [
   },
 ]
 
+// Debug menu items only shown to superadmins
+const debugItems = [
+  {
+    label: 'Email tesztelés',
+    href: '/admin/debug/email',
+    icon: WrenchScrewdriverIcon,
+  },
+]
+
 const AdminNav = () => {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
+  const { data: session } = useSession()
+  
+  // Only show debug menu for superadmins
+  const isSuperAdmin = session?.user?.role === 'SUPERADMIN'
+  
+  // Combine regular items with debug items if superadmin
+  const allNavItems = isSuperAdmin 
+    ? [...navItems, ...debugItems]
+    : navItems
 
   return (
     <div className="bg-white border-b border-gray-200">
@@ -86,7 +106,7 @@ const AdminNav = () => {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden py-2 px-4 bg-white">
-          {navItems.map((item) => (
+          {allNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -107,7 +127,7 @@ const AdminNav = () => {
 
       {/* Desktop menu */}
       <nav className="hidden md:flex overflow-x-auto space-x-4 px-4 py-3">
-        {navItems.map((item) => (
+        {allNavItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
