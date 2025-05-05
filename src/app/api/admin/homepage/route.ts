@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     
     // If in production, prepend the base URL
     if (process.env.NODE_ENV === 'production') {
-      const baseUrl = process.env.NEXT_PUBLIC_URL || '';
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
       fileUrl = `${baseUrl}${fileUrl}`;
     }
     

@@ -17,8 +17,9 @@ export default async function HomepageEditorPage() {
   // Lekérjük a jelenlegi beállításokat
   let settings;
   try {
-    // Használjunk relatív URL-t a fetch-hez, ami minden környezetben működik
-    const response = await fetch('/api/admin/homepage', { 
+    // Használjunk abszolút URL-t a fetch-hez, ami minden környezetben működik
+    const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const response = await fetch(`${origin}/api/admin/homepage`, { 
       cache: 'no-store' 
     });
     if (response.ok) {

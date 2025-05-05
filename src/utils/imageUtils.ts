@@ -11,7 +11,7 @@ export function getAbsoluteImageUrl(url: string): string {
   }
   
   // For relative URLs, prepend the base URL
-  const baseUrl = process.env.NEXT_PUBLIC_URL || '';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || '';
   return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 }
 
