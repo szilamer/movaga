@@ -155,6 +155,9 @@ export async function sendOrderStatusEmail({
           triggerStatus: orderStatus as OrderStatus,
           isActive: true,
         },
+      }).catch(err => {
+        console.error('Error querying email template:', err);
+        return null;
       });
 
       if (template) {
