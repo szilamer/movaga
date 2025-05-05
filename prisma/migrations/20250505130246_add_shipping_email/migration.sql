@@ -4,14 +4,14 @@
   - Added the required column `shippingEmail` to the `Order` table without a default value. This is not possible if the table is not empty.
 
 */
--- AlterTable
+-- First add the column as nullable
 ALTER TABLE "Order" ADD COLUMN "shippingEmail" TEXT;
 
--- Frissítsük a meglévő rendeléseket egy alapértelmezett email címmel
+-- Update existing records with an email (either from the user or a fallback)
 UPDATE "Order" SET "shippingEmail" = COALESCE(
   (SELECT "email" FROM "users" WHERE "users"."id" = "Order"."userId"),
-  'no-email@movaga.hu'
+  'info@movaga.hu'
 );
 
--- Most tegyük a mezőt kötelezővé (NOT NULL)
+-- Now make the column required
 ALTER TABLE "Order" ALTER COLUMN "shippingEmail" SET NOT NULL;

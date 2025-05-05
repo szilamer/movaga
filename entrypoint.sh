@@ -3,8 +3,7 @@ set -e
 
 # Adatbázis migrálása
 echo "Running database migrations"
-npx prisma generate
-npx prisma db push
+npm run prisma:deploy
 
 # Seed data hozzáadása megfelelő környezeti változókkal és CommonJS módban
 echo "Adding seed data"
