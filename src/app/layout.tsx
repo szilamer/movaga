@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
-import RoleDebug from '@/components/debug/RoleDebug'
 import BackgroundProvider from '@/components/BackgroundProvider'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -24,7 +23,6 @@ export default function RootLayout({
       <body className={`${inter.className} text-white min-h-screen`}>
         <Providers>
           <BackgroundProvider>
-            <RoleDebug />
             {children}
           </BackgroundProvider>
         </Providers>
