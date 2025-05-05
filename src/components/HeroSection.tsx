@@ -7,12 +7,28 @@ import Image from 'next/image'
 interface HomepageSettings {
   heroBackgroundImage: string;
   pageBackgroundImage: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  aboutUsTitle: string;
+  aboutUsContent: string;
+  businessPartnersTitle: string;
+  businessPartnersContent: string;
+  useHtmlForAboutUs: boolean;
+  useHtmlForBusinessPartners: boolean;
 }
 
 export default function HeroSection() {
   const [settings, setSettings] = useState<HomepageSettings>({
     heroBackgroundImage: '/hero-bg.jpg',
-    pageBackgroundImage: '/background.jpg'
+    pageBackgroundImage: '/background.jpg',
+    heroTitle: 'Movaga',
+    heroSubtitle: 'Minőség és elegancia minden vásárlónak',
+    aboutUsTitle: 'Rólunk',
+    aboutUsContent: 'A Movaga célja, hogy prémium minőségű termékeket kínáljon felhasználóinak egy modern és felhasználóbarát webáruházon keresztül. Csapatunk elkötelezett a vásárlói élmény és az innováció mellett.',
+    businessPartnersTitle: 'Üzleti partnereknek',
+    businessPartnersContent: 'Csatlakozz jutalékalapú rendszerünkhöz üzletkötőként, és növeld bevételeidet könnyedén.',
+    useHtmlForAboutUs: false,
+    useHtmlForBusinessPartners: false,
   });
 
   useEffect(() => {
@@ -52,13 +68,13 @@ export default function HeroSection() {
         >
           <Image
             src="/logo.png"
-            alt="Movaga Logo"
+            alt={settings.heroTitle}
             fill
             className="object-contain"
             priority
           />
         </motion.div>
-        <p className="text-2xl max-w-xl">Minőség és elegancia minden vásárlónak</p>
+        <p className="text-2xl max-w-xl">{settings.heroSubtitle}</p>
       </div>
     </section>
   )
