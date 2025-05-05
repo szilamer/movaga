@@ -48,7 +48,6 @@
     "@types/nodemailer": "^6.4.17",
     "@uploadthing/react": "^7.3.0",
     "axios": "^1.9.0",
-    "bcrypt": "^5.1.1",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.6.0",
     "clsx": "^2.1.1",
@@ -73,6 +72,9 @@
     "uploadthing": "^7.6.0",
     "zod": "^3.24.2",
     "zustand": "^5.0.3"
+  },
+  "optionalDependencies": {
+    "bcrypt": "^5.1.1"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

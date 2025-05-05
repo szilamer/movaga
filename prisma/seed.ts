@@ -1,17 +1,29 @@
-const { PrismaClient } = require('@prisma/client')
-const { hash } = require('bcrypt')
+// Próbáljuk betölteni a bcrypt-et, ha nem sikerül, használjuk az auth.ts-ben lévő hashPassword függvényt
+let hashPassword;
+try {
+  const { hash } = require('bcrypt');
+  const SALT_ROUNDS = 10;
+  hashPassword = async (password) => await hash(password, SALT_ROUNDS);
+  console.log('Using bcrypt for password hashing');
+} catch (error) {
+  // Ha a bcrypt nem elérhető, használjuk a saját SHA-256 implementációt
+  console.log('bcrypt not available, using built-in hash function');
+  const { hashPassword: authHashPassword } = require('../src/lib/auth/auth');
+  hashPassword = authHashPassword;
+}
 
-const prisma = new PrismaClient()
-const SALT_ROUNDS = 10
+const { PrismaClient } = require('@prisma/client');
+
+const prisma = new PrismaClient();
 
 async function main() {
   // Szuperadmin felhasználó létrehozása vagy frissítése
-  const superadminEmail = 'admin@movaga.hu'
+  const superadminEmail = 'admin@movaga.hu';
   const existingSuperadmin = await prisma.user.findUnique({
     where: { email: superadminEmail }
-  })
+  });
 
-  const hashedPassword = await hash('Admin123!', SALT_ROUNDS)
+  const hashedPassword = await hashPassword('Admin123!');
 
   if (existingSuperadmin) {
     // Ha létezik, frissítjük a szerepkörét és jelszavát
@@ -21,8 +33,8 @@ async function main() {
         role: 'SUPERADMIN',
         hashedPassword: hashedPassword
       }
-    })
-    console.log('Szuperadmin felhasználó frissítve')
+    });
+    console.log('Szuperadmin felhasználó frissítve');
   } else {
     // Ha nem létezik, létrehozzuk
     await prisma.user.create({
@@ -32,15 +44,15 @@ async function main() {
         hashedPassword: hashedPassword,
         role: 'SUPERADMIN'
       }
-    })
-    console.log('Szuperadmin felhasználó létrehozva')
+    });
+    console.log('Szuperadmin felhasználó létrehozva');
   }
 
   // Teszt kategória létrehozása vagy frissítése
-  const testCategorySlug = 'teszt-kategoria'
+  const testCategorySlug = 'teszt-kategoria';
   const existingCategory = await prisma.category.findUnique({
     where: { slug: testCategorySlug }
-  })
+  });
 
   if (existingCategory) {
     await prisma.category.update({
@@ -49,8 +61,8 @@ async function main() {
         name: 'Teszt kategória',
         description: 'Ez egy teszt kategória'
       }
-    })
-    console.log('Teszt kategória frissítve')
+    });
+    console.log('Teszt kategória frissítve');
   } else {
     await prisma.category.create({
       data: {
@@ -58,8 +70,8 @@ async function main() {
         description: 'Ez egy teszt kategória',
         slug: testCategorySlug
       }
-    })
-    console.log('Teszt kategória létrehozva')
+    });
+    console.log('Teszt kategória létrehozva');
   }
 
   // Find or create email templates
@@ -182,9 +194,9 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error(e)
-    process.exit(1)
+    console.error(e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  }) 
+    await prisma.$disconnect();
+  })
