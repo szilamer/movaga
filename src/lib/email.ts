@@ -18,8 +18,57 @@ const hasValidEmailConfig = () => {
   return true;
 };
 
+// Track connection failures for fallback logic
+let primaryConnectionFailures = 0;
+const MAX_PRIMARY_FAILURES = 5;
+let lastConnectionAttempt = 0;
+const CONNECTION_RETRY_INTERVAL = 10 * 60 * 1000; // 10 minutes
+
 // Create transport only if configuration exists
 let transporter: nodemailer.Transporter | null = null;
+let fallbackTransporter: nodemailer.Transporter | null = null;
+
+// Setup fallback transporter using a secondary service
+const initializeFallbackTransporter = () => {
+  // Check if fallback config exists
+  if (process.env.FALLBACK_SMTP_HOST && 
+      process.env.FALLBACK_SMTP_PORT && 
+      process.env.FALLBACK_SMTP_USER && 
+      process.env.FALLBACK_SMTP_PASS) {
+    
+    try {
+      console.log('[EMAIL] Initializing fallback email transporter');
+      
+      fallbackTransporter = nodemailer.createTransport({
+        host: process.env.FALLBACK_SMTP_HOST,
+        port: Number(process.env.FALLBACK_SMTP_PORT),
+        secure: true,
+        auth: {
+          user: process.env.FALLBACK_SMTP_USER,
+          pass: process.env.FALLBACK_SMTP_PASS,
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
+      
+      console.log('[EMAIL] Fallback transporter configured:', {
+        host: process.env.FALLBACK_SMTP_HOST,
+        port: process.env.FALLBACK_SMTP_PORT,
+        user: process.env.FALLBACK_SMTP_USER
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('[EMAIL] Failed to initialize fallback transporter:', error);
+      fallbackTransporter = null;
+      return false;
+    }
+  } else {
+    console.log('[EMAIL] No fallback SMTP configuration found');
+    return false;
+  }
+};
 
 // Helper function to test connection to SMTP server
 async function testSmtpConnection(host: string, port: number): Promise<{ success: boolean, message: string }> {
@@ -53,6 +102,15 @@ async function initializeTransporter(): Promise<void> {
     return;
   }
 
+  // Don't retry connections too frequently
+  const now = Date.now();
+  if (lastConnectionAttempt > 0 && now - lastConnectionAttempt < CONNECTION_RETRY_INTERVAL) {
+    console.log(`[EMAIL] Skipping connection attempt, last tried ${Math.round((now - lastConnectionAttempt) / 1000 / 60)} minutes ago`);
+    return;
+  }
+  
+  lastConnectionAttempt = now;
+
   try {
     const host = process.env.SMTP_HOST || '';
     const port = Number(process.env.SMTP_PORT || 465);
@@ -68,6 +126,7 @@ async function initializeTransporter(): Promise<void> {
       console.log(`SMTP host ${host} resolves to:`, addresses);
     } catch (dnsErr) {
       console.error(`Failed to resolve SMTP host ${host}:`, dnsErr);
+      primaryConnectionFailures++;
     }
     
     // Test raw socket connection
@@ -76,6 +135,16 @@ async function initializeTransporter(): Promise<void> {
     
     if (!connectionTest.success) {
       console.error('SMTP connection test failed. Email service may not work.');
+      primaryConnectionFailures++;
+      
+      // Initialize fallback after repeated failures
+      if (primaryConnectionFailures >= MAX_PRIMARY_FAILURES) {
+        console.warn(`[EMAIL] Primary email server failed ${primaryConnectionFailures} times, initializing fallback`);
+        initializeFallbackTransporter();
+      }
+    } else {
+      // Reset failure counter on success
+      primaryConnectionFailures = 0;
     }
     
     // Create transporter anyway for potential future success
@@ -110,17 +179,26 @@ async function initializeTransporter(): Promise<void> {
         console.log('SMTP Verification:', verified ? 'Success' : 'Failed');
       } catch (verifyErr) {
         console.error('SMTP Verification failed:', verifyErr);
+        primaryConnectionFailures++;
       }
     }
   } catch (error) {
     console.error('Failed to create email transporter:', error);
     transporter = null;
+    primaryConnectionFailures++;
+  }
+  
+  // Initialize fallback on startup if primary fails
+  if (primaryConnectionFailures > 0 && !fallbackTransporter) {
+    initializeFallbackTransporter();
   }
 }
 
 // Initialize transporter on module load
 initializeTransporter().catch(err => {
   console.error('Failed to initialize email transporter:', err);
+  // Initialize fallback on startup error
+  initializeFallbackTransporter();
 });
 
 interface OrderEmailParams {
@@ -247,14 +325,30 @@ export async function reinitializeEmailTransporter(): Promise<boolean> {
  */
 export function getEmailConfigStatus() {
   const requiredVars = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'];
+  const fallbackVars = ['FALLBACK_SMTP_HOST', 'FALLBACK_SMTP_PORT', 'FALLBACK_SMTP_USER', 'FALLBACK_SMTP_PASS', 'FALLBACK_SMTP_FROM'];
+  
+  // Check fallback configuration
+  const fallbackConfigured = fallbackVars.every(varName => !!process.env[varName]);
   
   return {
     configured: hasValidEmailConfig(),
     transporterInitialized: !!transporter,
+    fallbackConfigured,
+    fallbackTransporterInitialized: !!fallbackTransporter,
+    primaryConnectionFailures,
     configuration: requiredVars.reduce((acc, varName) => {
       acc[varName] = {
         exists: !!process.env[varName],
         value: varName === 'SMTP_PASS' 
+          ? (process.env[varName] ? '********' : undefined)
+          : process.env[varName]
+      };
+      return acc;
+    }, {} as Record<string, { exists: boolean, value?: string }>),
+    fallbackConfiguration: fallbackVars.reduce((acc, varName) => {
+      acc[varName] = {
+        exists: !!process.env[varName],
+        value: varName === 'FALLBACK_SMTP_PASS' 
           ? (process.env[varName] ? '********' : undefined)
           : process.env[varName]
       };
@@ -278,17 +372,23 @@ export async function sendOrderStatusEmail({
   try {
     console.log(`[EMAIL] Attempting to send email: status = ${orderStatus}, recipient = ${to}, order = ${orderNumber}`);
     
-    // Check if the email service is available
-    if (!transporter) {
-      console.error('[EMAIL] Email service is not available - check SMTP configuration');
+    // Check if any email service is available
+    const hasValidTransporter = !!transporter || !!fallbackTransporter;
+    if (!hasValidTransporter) {
+      console.error('[EMAIL] No email service is available - check SMTP configuration');
       
       // Try to reinitialize once
       const reinitialized = await reinitializeEmailTransporter();
-      if (!reinitialized || !transporter) {
-        console.error('[EMAIL] Failed to reinitialize email transporter');
+      if (!reinitialized && !fallbackTransporter) {
+        console.error('[EMAIL] Failed to reinitialize email transporter and no fallback available');
         return false;
       }
-      console.log('[EMAIL] Successfully reinitialized email transporter');
+      
+      if (reinitialized) {
+        console.log('[EMAIL] Successfully reinitialized email transporter');
+      } else if (fallbackTransporter) {
+        console.log('[EMAIL] Using fallback email transporter');
+      }
     }
 
     // Validate recipient email
@@ -373,96 +473,131 @@ export async function sendOrderStatusEmail({
 
     console.log(`[EMAIL] Email content prepared, sending to: ${to}`);
 
-    // Send email with multiple retries
+    // Send email with multiple retries and fallback
     let success = false;
     let lastError = null;
     const maxRetries = 2;
     
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      if (attempt > 0) {
-        console.log(`[EMAIL] Retry attempt ${attempt} of ${maxRetries}`);
-        // Wait briefly before retry
-        await new Promise(resolve => setTimeout(resolve, 1000));
+    // Try primary first (if available)
+    if (transporter) {
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        if (attempt > 0) {
+          console.log(`[EMAIL] Retry attempt ${attempt} of ${maxRetries}`);
+          // Wait briefly before retry
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Reinitialize transporter on retry
+          if (attempt === 1) {
+            console.log('[EMAIL] Reinitializing transporter before retry');
+            await reinitializeEmailTransporter();
+          }
+        }
         
-        // Reinitialize transporter on retry
-        if (attempt === 1) {
-          console.log('[EMAIL] Reinitializing transporter before retry');
-          await reinitializeEmailTransporter();
+        try {
+          const info = await transporter.sendMail({
+            from: process.env.SMTP_FROM || process.env.SMTP_USER || 'info@movaga.hu',
+            to,
+            subject,
+            html,
+          });
+
+          console.log(`[EMAIL] Email successfully sent: to=${to}, order=${orderNumber}, status=${orderStatus}, messageId=${info.messageId}`);
+          success = true;
+          break;
+        } catch (sendError) {
+          lastError = sendError;
+          primaryConnectionFailures++;
+          
+          // Special handling for common SMTP errors
+          if (typeof sendError === 'object' && sendError !== null) {
+            const error = sendError as any;
+            
+            // Connection refused errors
+            if (error.code === 'ESOCKET' || error.code === 'ECONNREFUSED') {
+              console.error(`[EMAIL] Connection to SMTP server failed: ${error.message}`);
+              
+              // Test raw connection on error to diagnose
+              try {
+                const host = process.env.SMTP_HOST!;
+                const port = Number(process.env.SMTP_PORT!);
+                const connectionTest = await testSmtpConnection(host, port);
+                console.log(`[EMAIL] SMTP connection diagnostic: ${connectionTest.message}`);
+              } catch (diagErr) {
+                console.error('[EMAIL] Connection diagnostic failed:', diagErr);
+              }
+            }
+            
+            // Authentication errors
+            else if (error.code === 'EAUTH') {
+              console.error('[EMAIL] SMTP authentication failed. Check credentials.');
+            }
+            
+            // Relay access denied (common with test emails)
+            else if (error.code === 'EENVELOPE' && 
+                    'rejected' in error && 
+                    Array.isArray(error.rejected) && 
+                    error.rejected.includes(to)) {
+              console.warn(`[EMAIL] Email rejected by server (likely relay access denied) for recipient: ${to}`);
+              console.warn('[EMAIL] This is often a configuration issue with the SMTP server.');
+              console.warn('[EMAIL] Your SMTP server may need to be configured to allow relaying to external domains.');
+              console.warn('[EMAIL] Contact your email provider or consider using a transactional email service like SendGrid, Mailgun, or Amazon SES.');
+              
+              if (error.response && error.response.includes('Relay access denied')) {
+                console.error('[EMAIL] CONFIRMED RELAY ACCESS DENIED ERROR: The SMTP server is not configured to send to external domains.');
+                console.error('[EMAIL] In production, contact your email provider to allow relay access for your server IP.');
+              }
+              
+              // This is usually a permanent error, no point retrying
+              break;
+            }
+          }
+          
+          // Log detailed error
+          console.error('[EMAIL] Error sending email via SMTP:', sendError);
+          if (sendError instanceof Error) {
+            console.error('[EMAIL] Error details:', {
+              message: sendError.message,
+              name: sendError.name,
+              stack: sendError.stack,
+            });
+          }
         }
       }
+    }
+    
+    // Try fallback if primary failed and fallback is available
+    if (!success && fallbackTransporter) {
+      console.log('[EMAIL] Primary email service failed, trying fallback');
       
       try {
-        const info = await transporter.sendMail({
-          from: process.env.SMTP_FROM || process.env.SMTP_USER || 'info@movaga.hu',
+        const info = await fallbackTransporter.sendMail({
+          from: process.env.FALLBACK_SMTP_FROM || process.env.FALLBACK_SMTP_USER || 'no-reply@movaga.hu',
           to,
           subject,
           html,
         });
 
-        console.log(`[EMAIL] Email successfully sent: to=${to}, order=${orderNumber}, status=${orderStatus}, messageId=${info.messageId}`);
+        console.log(`[EMAIL] Email successfully sent via fallback: to=${to}, order=${orderNumber}, status=${orderStatus}, messageId=${info.messageId}`);
         success = true;
-        break;
-      } catch (sendError) {
-        lastError = sendError;
-        
-        // Special handling for common SMTP errors
-        if (typeof sendError === 'object' && sendError !== null) {
-          const error = sendError as any;
-          
-          // Connection refused errors
-          if (error.code === 'ESOCKET' || error.code === 'ECONNREFUSED') {
-            console.error(`[EMAIL] Connection to SMTP server failed: ${error.message}`);
-            
-            // Test raw connection on error to diagnose
-            try {
-              const host = process.env.SMTP_HOST!;
-              const port = Number(process.env.SMTP_PORT!);
-              const connectionTest = await testSmtpConnection(host, port);
-              console.log(`[EMAIL] SMTP connection diagnostic: ${connectionTest.message}`);
-            } catch (diagErr) {
-              console.error('[EMAIL] Connection diagnostic failed:', diagErr);
-            }
-          }
-          
-          // Authentication errors
-          else if (error.code === 'EAUTH') {
-            console.error('[EMAIL] SMTP authentication failed. Check credentials.');
-          }
-          
-          // Relay access denied (common with test emails)
-          else if (error.code === 'EENVELOPE' && 
-                  'rejected' in error && 
-                  Array.isArray(error.rejected) && 
-                  error.rejected.includes(to)) {
-            console.warn(`[EMAIL] Email rejected by server (likely relay access denied) for recipient: ${to}`);
-            console.warn('[EMAIL] This is often a configuration issue with the SMTP server.');
-            console.warn('[EMAIL] Your SMTP server may need to be configured to allow relaying to external domains.');
-            console.warn('[EMAIL] Contact your email provider or consider using a transactional email service like SendGrid, Mailgun, or Amazon SES.');
-            
-            if (error.response && error.response.includes('Relay access denied')) {
-              console.error('[EMAIL] CONFIRMED RELAY ACCESS DENIED ERROR: The SMTP server is not configured to send to external domains.');
-              console.error('[EMAIL] In production, contact your email provider to allow relay access for your server IP.');
-            }
-            
-            // This is usually a permanent error, no point retrying
-            break;
-          }
-        }
-        
-        // Log detailed error
-        console.error('[EMAIL] Error sending email via SMTP:', sendError);
-        if (sendError instanceof Error) {
-          console.error('[EMAIL] Error details:', {
-            message: sendError.message,
-            name: sendError.name,
-            stack: sendError.stack,
-          });
-        }
+      } catch (fallbackError) {
+        console.error('[EMAIL] Fallback email service also failed:', fallbackError);
+        lastError = fallbackError;
       }
     }
     
     if (!success && lastError) {
-      console.error('[EMAIL] All retry attempts failed for sending email to:', to);
+      console.error('[EMAIL] All attempts failed for sending email to:', to);
+      
+      // If we've had persistent connection failures, log a clear message about the problem
+      if (primaryConnectionFailures >= MAX_PRIMARY_FAILURES) {
+        console.error('[EMAIL] PERSISTENT CONNECTION FAILURES: The email server appears to be unreachable.');
+        console.error('[EMAIL] Please check your SMTP settings and ensure the server is accessible from your deployment environment.');
+        console.error('[EMAIL] You may need to:');
+        console.error('[EMAIL] 1. Verify the SMTP_HOST and SMTP_PORT settings');
+        console.error('[EMAIL] 2. Check if your deployment platform restricts outgoing connections to port 465');
+        console.error('[EMAIL] 3. Ensure your email server allows connections from your application server IP');
+        console.error('[EMAIL] 4. Consider using a different email service provider like SendGrid, Mailgun, or AWS SES');
+      }
     }
     
     return success;

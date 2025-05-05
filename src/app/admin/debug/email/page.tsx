@@ -269,13 +269,34 @@ function ConfigurationCheck() {
   const [loading, setLoading] = React.useState(false);
   const [config, setConfig] = React.useState<any>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [activeTab, setActiveTab] = React.useState<'primary' | 'fallback' | 'connectivity'>('primary');
 
   async function checkConfiguration() {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/debug/check-email-config");
+      const response = await fetch("/api/debug/email-config-status");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Unknown error occurred');
+      }
+
+      setConfig(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function reinitializeEmailService() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/debug/email-config-status?reinitialize=true");
       const data = await response.json();
 
       if (!response.ok) {
@@ -296,14 +317,23 @@ function ConfigurationCheck() {
 
   return (
     <div className="space-y-4">
-      <Button 
-        variant="outline" 
-        onClick={checkConfiguration} 
-        disabled={loading}
-        className="w-full"
-      >
-        {loading ? "Checking..." : "Refresh Configuration"}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button 
+          variant="outline" 
+          onClick={checkConfiguration} 
+          disabled={loading}
+        >
+          {loading ? "Checking..." : "Refresh Configuration"}
+        </Button>
+
+        <Button
+          variant="outline"
+          onClick={reinitializeEmailService}
+          disabled={loading}
+        >
+          Reinitialize Email Service
+        </Button>
+      </div>
 
       {error && (
         <Alert variant="destructive">
@@ -315,28 +345,150 @@ function ConfigurationCheck() {
 
       {config && (
         <div className="space-y-4">
-          <Alert variant={config.status === 'complete' ? "default" : "warning"}>
-            <Info className="h-4 w-4" />
-            <AlertTitle>Configuration Status: {config.status}</AlertTitle>
-            <AlertDescription>{config.message}</AlertDescription>
-          </Alert>
-
-          <div className="border rounded p-4">
-            <h3 className="font-medium mb-2">Environment Variables</h3>
-            <div className="space-y-2">
-              {Object.entries(config.configuration).map(([key, value]: [string, any]) => (
-                <div key={key} className="flex items-center justify-between text-sm">
-                  <span className="font-mono">{key}</span>
-                  <span className={`font-medium ${value.exists ? 'text-green-600' : 'text-red-600'}`}>
-                    {value.exists ? (value.value || 'Set') : 'Missing'}
-                  </span>
-                </div>
-              ))}
-            </div>
+          <div className="flex border-b">
+            <button
+              className={`px-4 py-2 border-b-2 ${activeTab === 'primary' ? 'border-primary font-medium' : 'border-transparent'}`}
+              onClick={() => setActiveTab('primary')}
+            >
+              Primary SMTP
+            </button>
+            <button
+              className={`px-4 py-2 border-b-2 ${activeTab === 'fallback' ? 'border-primary font-medium' : 'border-transparent'}`}
+              onClick={() => setActiveTab('fallback')}
+            >
+              Fallback SMTP
+            </button>
+            <button
+              className={`px-4 py-2 border-b-2 ${activeTab === 'connectivity' ? 'border-primary font-medium' : 'border-transparent'}`}
+              onClick={() => setActiveTab('connectivity')}
+            >
+              Connectivity
+            </button>
           </div>
 
+          {activeTab === 'primary' && (
+            <>
+              <Alert variant={config.configured ? "default" : "warning"}>
+                <Info className="h-4 w-4" />
+                <AlertTitle>Primary Configuration Status: {config.configured ? 'Complete' : 'Incomplete'}</AlertTitle>
+                <AlertDescription>
+                  {config.configured ? 
+                    'All required primary SMTP variables are set.' : 
+                    'Some required primary SMTP variables are missing.'}
+                </AlertDescription>
+              </Alert>
+
+              <div className="border rounded p-4">
+                <h3 className="font-medium mb-2">Primary SMTP Configuration</h3>
+                <div className="space-y-2">
+                  {Object.entries(config.configuration).map(([key, value]: [string, any]) => (
+                    <div key={key} className="flex items-center justify-between text-sm">
+                      <span className="font-mono">{key}</span>
+                      <span className={`font-medium ${value.exists ? 'text-green-600' : 'text-red-600'}`}>
+                        {value.exists ? (value.value || 'Set') : 'Missing'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-sm text-muted-foreground">
+                <p>Transporter Initialized: {config.transporterInitialized ? 'Yes' : 'No'}</p>
+                <p>Connection Failures: {config.primaryConnectionFailures}</p>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'fallback' && (
+            <>
+              <Alert variant={config.fallbackConfigured ? "default" : "warning"}>
+                <Info className="h-4 w-4" />
+                <AlertTitle>Fallback Configuration Status: {config.fallbackConfigured ? 'Complete' : 'Incomplete'}</AlertTitle>
+                <AlertDescription>
+                  {config.fallbackConfigured ? 
+                    'All required fallback SMTP variables are set.' : 
+                    'Some required fallback SMTP variables are missing.'}
+                </AlertDescription>
+              </Alert>
+
+              <div className="border rounded p-4">
+                <h3 className="font-medium mb-2">Fallback SMTP Configuration</h3>
+                <div className="space-y-2">
+                  {Object.entries(config.fallbackConfiguration).map(([key, value]: [string, any]) => (
+                    <div key={key} className="flex items-center justify-between text-sm">
+                      <span className="font-mono">{key}</span>
+                      <span className={`font-medium ${value.exists ? 'text-green-600' : 'text-red-600'}`}>
+                        {value.exists ? (value.value || 'Set') : 'Missing'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-sm text-muted-foreground">
+                <p>Fallback Transporter Initialized: {config.fallbackTransporterInitialized ? 'Yes' : 'No'}</p>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'connectivity' && config.connectivityChecks && (
+            <>
+              <Alert variant="default">
+                <Info className="h-4 w-4" />
+                <AlertTitle>Connectivity Test Results</AlertTitle>
+                <AlertDescription>
+                  Real-time connectivity test results for configured SMTP servers
+                </AlertDescription>
+              </Alert>
+
+              {config.connectivityChecks.primary && (
+                <div className="border rounded p-4 mb-4">
+                  <h3 className="font-medium mb-2">Primary SMTP Connectivity</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Host</span>
+                      <span className="font-mono">{config.connectivityChecks.primary.host}:{config.connectivityChecks.primary.port}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Connection</span>
+                      <span className={`font-medium ${config.connectivityChecks.primary.connectionResult.success ? 'text-green-600' : 'text-red-600'}`}>
+                        {config.connectivityChecks.primary.connectionResult.success ? 'Success' : 'Failed'}
+                      </span>
+                    </div>
+                    <div className="text-sm">
+                      <span>Message: </span>
+                      <span className="italic">{config.connectivityChecks.primary.connectionResult.message}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {config.connectivityChecks.fallback && (
+                <div className="border rounded p-4">
+                  <h3 className="font-medium mb-2">Fallback SMTP Connectivity</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Host</span>
+                      <span className="font-mono">{config.connectivityChecks.fallback.host}:{config.connectivityChecks.fallback.port}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Connection</span>
+                      <span className={`font-medium ${config.connectivityChecks.fallback.connectionResult.success ? 'text-green-600' : 'text-red-600'}`}>
+                        {config.connectivityChecks.fallback.connectionResult.success ? 'Success' : 'Failed'}
+                      </span>
+                    </div>
+                    <div className="text-sm">
+                      <span>Message: </span>
+                      <span className="italic">{config.connectivityChecks.fallback.connectionResult.message}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
           <div className="text-sm text-muted-foreground">
-            <p>Environment: {config.environment?.NODE_ENV || 'unknown'}</p>
+            <p>Environment: {config.environment || 'unknown'}</p>
             <p>Last checked: {new Date(config.timestamp).toLocaleString()}</p>
           </div>
         </div>
