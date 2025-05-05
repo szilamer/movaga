@@ -150,6 +150,7 @@ model Order {
   shippingFullName   String
   shippingPhone      String?
   shippingZipCode    String
+  shippingEmail      String
   shippingMethod     String
   barionPaymentId    String?
   user               User?       @relation(fields: [userId], references: [id])

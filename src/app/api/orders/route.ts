@@ -84,6 +84,7 @@ export async function POST(req: Request) {
       shippingAddress,
       shippingZipCode,
       shippingPhone,
+      shippingEmail,
       // Billing address fields
       billingFullName,
       billingCountry,
@@ -155,6 +156,7 @@ export async function POST(req: Request) {
           shippingAddress,
           shippingZipCode,
           shippingPhone,
+          shippingEmail,
           billingFullName,
           billingCountry,
           billingCity,

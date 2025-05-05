@@ -24,6 +24,7 @@ interface AddressFormValues {
   shippingAddress: string;
   shippingZipCode: string;
   shippingPhone: string;
+  shippingEmail: string;
 
   // Billing address
   billingFullName: string;
@@ -59,6 +60,7 @@ export default function CheckoutPage() {
       shippingAddress: '',
       shippingZipCode: '',
       shippingPhone: '',
+      shippingEmail: session?.user?.email || '',
       
       billingFullName: '',
       billingCountry: 'Magyarország',
@@ -352,6 +354,7 @@ export default function CheckoutPage() {
             shippingAddress: formData.shippingAddress,
             shippingZipCode: formData.shippingZipCode,
             shippingPhone: formData.shippingPhone,
+            shippingEmail: formData.shippingEmail,
             
             // Számlázási cím
             billingFullName: formData.sameAsShipping ? formData.shippingFullName : formData.billingFullName,
@@ -401,6 +404,7 @@ export default function CheckoutPage() {
           shippingAddress: formData.shippingAddress,
           shippingZipCode: formData.shippingZipCode,
           shippingPhone: formData.shippingPhone,
+          shippingEmail: formData.shippingEmail,
           
           // Számlázási cím
           billingFullName: formData.sameAsShipping ? formData.shippingFullName : formData.billingFullName,
@@ -517,6 +521,24 @@ export default function CheckoutPage() {
                           {...register('shippingPhone')}
                           className="w-full px-3 py-2 border rounded-md"
                         />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Email cím*</label>
+                        <input
+                          type="email"
+                          {...register('shippingEmail', { 
+                            required: 'Az email cím megadása kötelező',
+                            pattern: {
+                              value: /\S+@\S+\.\S+/,
+                              message: 'Érvénytelen email cím formátum'
+                            }
+                          })}
+                          className="w-full px-3 py-2 border rounded-md"
+                        />
+                        {errors.shippingEmail && (
+                          <p className="text-red-500 text-sm mt-1">{errors.shippingEmail.message}</p>
+                        )}
                       </div>
                       
                       <div className="sm:col-span-2">

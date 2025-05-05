@@ -113,16 +113,23 @@ export async function PATCH(
       data: { status: data.status },
     });
     
-    // Küldünk email értesítést a státuszváltozásról ha van email cím
-    if (needsEmailNotification && order.user?.email) {
-      await sendOrderStatusEmail({
-        to: order.user.email,
-        orderNumber: order.id,
-        total: order.total,
-        shippingMethod: order.shippingMethod,
-        paymentMethod: order.paymentMethod,
-        orderStatus: data.status,
-      });
+    // Küldünk email értesítést a státuszváltozásról
+    if (needsEmailNotification) {
+      // Használjuk a rendelés email címét vagy a felhasználó email címét
+      const orderEmail = order.shippingEmail || (order.user?.email || null);
+      
+      if (orderEmail) {
+        await sendOrderStatusEmail({
+          to: orderEmail,
+          orderNumber: order.id,
+          total: order.total,
+          shippingMethod: order.shippingMethod,
+          paymentMethod: order.paymentMethod,
+          orderStatus: data.status,
+        });
+      } else {
+        console.error(`Nem sikerült email értesítést küldeni a rendelésről: hiányzó email cím (rendelés azonosító: ${order.id})`);
+      }
     }
 
     return NextResponse.json(updatedOrder);
