@@ -63,7 +63,7 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
       formData.append('type', type);
 
       // Use absolute URL with base URL for API calls
-      const baseUrl = process.env.NEXT_PUBLIC_URL || '';
+      const baseUrl = window.location.origin;
       const response = await fetch(`${baseUrl}/api/admin/homepage`, {
         method: 'POST',
         body: formData,
@@ -104,7 +104,7 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
   const saveContent = async () => {
     setSaving(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_URL || '';
+      const baseUrl = window.location.origin;
       const response = await fetch(`${baseUrl}/api/admin/homepage/content`, {
         method: 'POST',
         headers: {

@@ -35,7 +35,8 @@ export default function HeroSection() {
     // Beállítások betöltése
     const fetchSettings = async () => {
       try {
-        const response = await fetch('/api/admin/homepage');
+        const baseUrl = window.location.origin;
+        const response = await fetch(`${baseUrl}/api/admin/homepage`);
         if (response.ok) {
           const data = await response.json();
           setSettings(data);

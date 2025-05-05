@@ -25,15 +25,12 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Jelszó', type: 'password' }
       },
       async authorize(credentials) {
-        console.log('[Auth Debug] Authorize called with credentials:', credentials);
         if (!credentials?.email || !credentials?.password) {
-          console.log('[Auth Debug] Missing email or password');
           return null
         }
 
         // Admin felhasználó ellenőrzése (override adatbázisból)
         if (credentials.email === ADMIN_EMAIL && credentials.password === ADMIN_PASSWORD) {
-          console.log('[Auth Debug] Admin login successful with hardcoded credentials');
           return {
             id: 'admin-id',
             email: ADMIN_EMAIL,
@@ -53,10 +50,7 @@ export const authOptions: NextAuthOptions = {
           }
         })
 
-        console.log('[Auth Debug] User found in DB:', user);
-
         if (!user || !user.hashedPassword || !user.email) {
-          console.log('[Auth Debug] User not found or missing hashedPassword/email');
           return null
         }
 
@@ -64,7 +58,6 @@ export const authOptions: NextAuthOptions = {
         const isPasswordValid = await verifyPassword(credentials.password, user.hashedPassword);
         
         if (isPasswordValid) {
-          console.log('[Auth Debug] Password verification successful');
           return {
             id: user.id,
             email: user.email,
@@ -73,7 +66,6 @@ export const authOptions: NextAuthOptions = {
           }
         }
         
-        console.log('[Auth Debug] Password verification failed');
         return null
       }
     })
@@ -108,5 +100,5 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60 // 30 nap
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === 'development'
+  debug: false
 } 
