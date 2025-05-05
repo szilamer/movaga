@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import { formatPrice } from './utils';
 import prisma from './prisma';
 
+// A transporter létrehozása kiegészítve hibakezeléssel és TLS beállításokkal
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
@@ -10,6 +11,18 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  tls: {
+    // Ne utasítsa el az érvénytelen tanúsítványokat
+    rejectUnauthorized: false
+  }
+});
+
+// Konfiguráció naplózása (jelszó nélkül)
+console.log('Email transporter konfigurálva:', {
+  host: process.env.SMTP_HOST, 
+  port: process.env.SMTP_PORT, 
+  user: process.env.SMTP_USER,
+  from: process.env.SMTP_FROM
 });
 
 interface OrderEmailParams {
@@ -46,6 +59,8 @@ export async function sendOrderStatusEmail({
   orderStatus,
 }: OrderEmailParams) {
   try {
+    console.log(`Megkísérlem email küldését: státusz = ${orderStatus}, címzett = ${to}, rendelés = ${orderNumber}`);
+    
     // Find the email template for the given order status
     const template = await prisma.emailTemplate.findFirst({
       where: {
@@ -55,9 +70,11 @@ export async function sendOrderStatusEmail({
     });
 
     if (!template) {
-      console.error(`No active email template found for order status: ${orderStatus}`);
+      console.error(`Nincs aktív email sablon a következő rendelési státuszhoz: ${orderStatus}`);
       return false;
     }
+
+    console.log(`Email sablon megtalálva: ${template.name}`);
 
     // Replace placeholders in subject and content
     const data = {
@@ -70,18 +87,25 @@ export async function sendOrderStatusEmail({
     const subject = replacePlaceholders(template.subject, data);
     const html = replacePlaceholders(template.content, data);
 
+    console.log(`Email tartalom elkészítve, küldés a következő címre: ${to}`);
+
     // Send email
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: process.env.SMTP_FROM,
       to,
       subject,
       html,
     });
 
-    console.log(`Order status email sent to ${to} for order ${orderNumber} (status: ${orderStatus})`);
+    console.log(`Email sikeresen elküldve: ${to}, rendelés: ${orderNumber}, státusz: ${orderStatus}, messageId: ${info.messageId}`);
     return true;
   } catch (error) {
-    console.error('Error sending order status email:', error);
+    console.error('Hiba történt az email küldése során:', error);
+    // Ha van további részletes információ, azt is naplózzuk
+    if (error instanceof Error) {
+      console.error('Hiba üzenet:', error.message);
+      console.error('Hiba stack:', error.stack);
+    }
     return false;
   }
 }
