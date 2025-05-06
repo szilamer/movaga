@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['localhost', 'movaga.onrender.com', 'res.cloudinary.com'], // Legacy fallback
+    domains: ['localhost', 'movaga.onrender.com', 'movaga-prod.orender.hu', 'res.cloudinary.com'], // Legacy fallback
     remotePatterns: [
       {
         protocol: 'https',
@@ -10,6 +10,14 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'movaga.onrender.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'movaga-prod.orender.hu',
+      },
+      {
+        protocol: 'https',
+        hostname: 'movaga.hu',
       },
       {
         protocol: 'https',
@@ -36,10 +44,10 @@ const nextConfig = {
   },
   env: {
     NEXTAUTH_URL: process.env.NODE_ENV === 'production' 
-      ? 'https://movaga.onrender.com' 
+      ? 'https://movaga-prod.orender.hu' 
       : 'http://localhost:3000',
     NEXT_PUBLIC_URL: process.env.NODE_ENV === 'production' 
-      ? 'https://movaga.onrender.com' 
+      ? 'https://movaga-prod.orender.hu' 
       : 'http://localhost:3000',
     BARION_POS_KEY: 'fab5fa17-77a6-4cf6-a5ae-a5cb81e264d8',
     NEXT_PUBLIC_BARION_POS_KEY: 'fab5fa17-77a6-4cf6-a5ae-a5cb81e264d8'
