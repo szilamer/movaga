@@ -6,25 +6,42 @@ echo "Running database migrations"
 # Prisma Client generálása
 npx prisma generate
 
-# Közvetlenül futtatjuk az SQL migrációt a shippingEmail mezőhöz
-echo "Applying shippingEmail migration directly with SQL..."
-npx prisma db execute --url="${DATABASE_URL}" --stdin <<SQL
--- Először hozzáadjuk a mezőt mint nullable
-ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "shippingEmail" TEXT;
+# Ellenőrizzük, hogy létezik-e már az Order tábla
+echo "Checking if database is initialized..."
+DB_INITIALIZED=$(npx prisma db execute --url="${DATABASE_URL}" --stdin <<SQL
+SELECT EXISTS (
+   SELECT FROM information_schema.tables 
+   WHERE table_schema = 'public' 
+   AND table_name = 'Order'
+);
+SQL
+)
 
--- Frissítjük a meglévő rekordokat
-UPDATE "Order" SET "shippingEmail" = COALESCE(
-  (SELECT "email" FROM "users" WHERE "users"."id" = "Order"."userId"),
-  'info@movaga.hu'
-) WHERE "shippingEmail" IS NULL;
+if echo "$DB_INITIALIZED" | grep -q "f"; then
+  echo "Database not initialized yet. Running full schema push..."
+  # Teljes séma létrehozása, mert az adatbázis még nincs inicializálva
+  npx prisma db push --accept-data-loss
+else
+  # Közvetlenül futtatjuk az SQL migrációt a shippingEmail mezőhöz
+  echo "Applying shippingEmail migration directly with SQL..."
+  npx prisma db execute --url="${DATABASE_URL}" --stdin <<SQL
+  -- Először hozzáadjuk a mezőt mint nullable
+  ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "shippingEmail" TEXT;
 
--- Most kötelezővé tesszük a mezőt
-ALTER TABLE "Order" ALTER COLUMN "shippingEmail" SET NOT NULL;
+  -- Frissítjük a meglévő rekordokat
+  UPDATE "Order" SET "shippingEmail" = COALESCE(
+    (SELECT "email" FROM "users" WHERE "users"."id" = "Order"."userId"),
+    'info@movaga.hu'
+  ) WHERE "shippingEmail" IS NULL;
+
+  -- Most kötelezővé tesszük a mezőt
+  ALTER TABLE "Order" ALTER COLUMN "shippingEmail" SET NOT NULL;
 SQL
 
-# Alkalmazzuk a többi sémamódosítást
-echo "Applying remaining schema changes..."
-npx prisma db push
+  # Alkalmazzuk a többi sémamódosítást
+  echo "Applying remaining schema changes..."
+  npx prisma db push
+fi
 
 # Seed data hozzáadása megfelelő környezeti változókkal és CommonJS módban
 echo "Adding seed data"
