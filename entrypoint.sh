@@ -6,46 +6,55 @@ echo "Running database migrations"
 # Prisma Client generálása
 npx prisma generate
 
-# Ellenőrizzük, hogy létezik-e már az Order tábla
-echo "Checking if database is initialized..."
-DB_INITIALIZED=$(npx prisma db execute --url="${DATABASE_URL}" --stdin <<SQL
-SELECT EXISTS (
-   SELECT FROM information_schema.tables 
-   WHERE table_schema = 'public' 
-   AND table_name = 'Order'
-);
-SQL
-)
-
-if echo "$DB_INITIALIZED" | grep -q "f"; then
-  echo "Database not initialized yet. Running full schema push..."
-  # Teljes séma létrehozása, mert az adatbázis még nincs inicializálva
-  npx prisma db push --accept-data-loss
-else
-  # Közvetlenül futtatjuk az SQL migrációt a shippingEmail mezőhöz
-  echo "Applying shippingEmail migration directly with SQL..."
+# Egyszerű, de robusztus megközelítés:
+# Először próbáljuk meg a db push-t, ami teljesen létrehozza a sémát ha szükséges
+echo "Initializing database with db push..."
+npx prisma db push --accept-data-loss || {
+  echo "Failed to initialize database with db push. Trying direct SQL migration..."
+  
+  # Ellenőrizzük az adatbázis-kapcsolatot
   npx prisma db execute --url="${DATABASE_URL}" --stdin <<SQL
-  -- Először hozzáadjuk a mezőt mint nullable
-  ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "shippingEmail" TEXT;
-
-  -- Frissítjük a meglévő rekordokat
-  UPDATE "Order" SET "shippingEmail" = COALESCE(
-    (SELECT "email" FROM "users" WHERE "users"."id" = "Order"."userId"),
-    'info@movaga.hu'
-  ) WHERE "shippingEmail" IS NULL;
-
-  -- Most kötelezővé tesszük a mezőt
-  ALTER TABLE "Order" ALTER COLUMN "shippingEmail" SET NOT NULL;
+  SELECT 1;
 SQL
-
-  # Alkalmazzuk a többi sémamódosítást
-  echo "Applying remaining schema changes..."
-  npx prisma db push
-fi
+  
+  echo "Database connection successful. Creating schema..."
+  # Közvetlenül futtatjuk az SQL migrációt
+  npx prisma db execute --url="${DATABASE_URL}" --stdin <<SQL
+  -- Tábla létrehozása, ha nem létezik
+  CREATE TABLE IF NOT EXISTS "Order" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "totalAmount" INTEGER NOT NULL,
+    "paymentStatus" TEXT NOT NULL DEFAULT 'PENDING',
+    "paymentId" TEXT,
+    "barionPaymentId" TEXT,
+    "shippingAddress" TEXT,
+    "billingAddress" TEXT,
+    "shippingMethod" TEXT,
+    "shippingCost" INTEGER NOT NULL DEFAULT 0,
+    "customerName" TEXT,
+    "customerEmail" TEXT,
+    "customerPhone" TEXT,
+    "shippingEmail" TEXT NOT NULL DEFAULT 'info@movaga.hu',
+    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+  );
+SQL
+  
+  # Alkalmazzuk a teljes séma push-t
+  echo "Order table created. Applying full schema..."
+  npx prisma db push --accept-data-loss
+}
 
 # Seed data hozzáadása megfelelő környezeti változókkal és CommonJS módban
 echo "Adding seed data"
 NODE_ENV=production npx ts-node --transpile-only --compiler-options '{"module":"CommonJS"}' prisma/seed.ts || echo "Seeding failed but continuing anyway"
+
+# Email template-ek hozzáadása
+echo "Adding email templates"
+NODE_ENV=production npx ts-node --transpile-only --compiler-options '{"module":"CommonJS"}' prisma/seed-email-templates.ts || echo "Email template seeding failed but continuing anyway"
 
 # Alkalmazás indítása
 echo "Starting application"
