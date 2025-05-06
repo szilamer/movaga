@@ -74,10 +74,33 @@ A következő környezeti változókat kell beállítani a Render.com felületé
 
 ## Hibaelhárítás
 
+### 502 Bad Gateway Hiba
+
+Ha 502-es hibát látsz, ellenőrizd a következőket:
+
+1. **Adatbázis kapcsolat**: Ellenőrizd, hogy a `DATABASE_URL` helyesen van-e beállítva.
+   - Navigálj a Render.com dashboardon a Postgres adatbázisodhoz
+   - Ellenőrizd a "Connection" fülön a belső kapcsolati URL-t
+   - Másold ezt az értéket a webservice-ed környezeti változói közé
+
+2. **Újratelepítés erőltetése**: 
+   - A Render.com dashboardon menj a webszolgáltatásodhoz
+   - Kattints a "Manual Deploy" gombra, majd válaszd a "Clear build cache & deploy" opciót
+
+3. **Naplók ellenőrzése**:
+   - Nézd meg a Render.com naplókat részletes hibainformációkért
+   - Ellenőrizd, hogy nincs-e "P1014" Prisma hiba az adatbázishoz kapcsolódva
+
+4. **Időtúllépés**:
+   - A kezdeti migráció időigényes lehet. Ha az első indítás 502-es hibával leáll, próbáld 
+   újraindítani a szolgáltatást, ekkor már meglévő adatbázishoz fog kapcsolódni.
+
+### Egyéb gyakori problémák
+
 Ha a telepítés után problémák lépnének fel:
 
 1. Ellenőrizd a Render.com naplófájlokat
-2. Ellenőrizd a környezeti változókat
+2. Ellenőrizd a környezeti változókat, különösen a `NEXTAUTH_URL` és `NEXT_PUBLIC_URL` értékeket
 3. Az admin felületen a `/admin/debug/email` útvonalon ellenőrizheted az email beállításokat
 4. A `/admin/debug/environment` útvonalon az általános környezeti beállításokat nézheted meg
 
@@ -92,4 +115,13 @@ A movaga.hu domaint a Render.com egyedi URL-re (movaga-prod.orender.hu) kell ir�
 2. A Render.com felületén add hozzá az egyéni domaint:
    - A Web Service beállításai > Domains > Add Domain
    - Add meg a domaint: `movaga.hu` (és/vagy `www.movaga.hu`)
-   - Kövesd a Render utasításait a DNS hitelesítéshez 
+   - Kövesd a Render utasításait a DNS hitelesítéshez
+
+## Ellenőrzőlista a Sikeres Telepítéshez
+
+- [ ] Ellenőrizd, hogy az összes szükséges környezeti változó be van állítva
+- [ ] Győződj meg róla, hogy az adatbázis elérési út helyesen van megadva
+- [ ] Győződj meg róla, hogy az entrypoint.sh script futási jogosultsággal rendelkezik
+- [ ] Ellenőrizd, hogy a Render service megfelelő memória beállítással rendelkezik (min. 1GB)
+- [ ] A telepítés után látogasd meg az admin felületet és ellenőrizd a debug oldalakat
+- [ ] Próbálj meg egy teszt rendelést létrehozni és ellenőrizd az email értesítéseket 
