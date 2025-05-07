@@ -96,6 +96,14 @@ export async function POST(req: Request) {
       billingTaxNumber
     } = data
 
+    // Validate shippingMethodId
+    if (!shippingMethodId || typeof shippingMethodId !== 'string' || shippingMethodId.trim() === '') {
+      return NextResponse.json(
+        { error: 'A szállítási mód kiválasztása kötelező.' },
+        { status: 400 }
+      )
+    }
+
     // Fetch shipping method details
     const shippingMethod = await prisma.shippingMethod.findUnique({
       where: {

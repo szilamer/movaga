@@ -253,6 +253,10 @@ export default function CheckoutPage() {
   }
 
   const handleSubmitOrder = async () => {
+    if (!selectedShippingMethod?.id) {
+      toast.error('Kérjük, válassz szállítási módot a rendelés leadásához!');
+      return;
+    }
     try {
       setIsSubmitting(true)
 
