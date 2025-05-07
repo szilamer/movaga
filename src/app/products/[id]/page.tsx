@@ -25,9 +25,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   // Parse description sections if they exist
   let descriptionSections: DescriptionSection[] = [];
-  if (product.descriptionSections) {
+  if (Array.isArray(product.descriptionSections)) {
+    descriptionSections = product.descriptionSections as unknown as DescriptionSection[];
+  } else if (typeof product.descriptionSections === 'string') {
     try {
-      descriptionSections = JSON.parse(product.descriptionSections as string) as DescriptionSection[];
+      descriptionSections = JSON.parse(product.descriptionSections) as DescriptionSection[];
     } catch (error) {
       console.error('Error parsing description sections:', error);
     }
