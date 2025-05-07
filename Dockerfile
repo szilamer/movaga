@@ -5,6 +5,7 @@ WORKDIR /app
 # Only essential build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
+    openssl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy dependency files first for better caching
@@ -16,6 +17,7 @@ WORKDIR /app
 # Only essential build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
+    openssl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy everything
@@ -31,11 +33,12 @@ RUN npm run build
 
 FROM node:18-slim AS runner
 WORKDIR /app
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates openssl && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV PORT=3000
 
+# Copy necessary files
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
