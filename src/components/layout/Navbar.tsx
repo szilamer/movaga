@@ -26,7 +26,7 @@ export function Navbar() {
     try {
       await signOut({ 
         redirect: true,
-        callbackUrl: 'https://movaga.hu'
+        callbackUrl: '/'
       });
     } catch (error) {
       console.error('Kijelentkezési hiba:', error);
