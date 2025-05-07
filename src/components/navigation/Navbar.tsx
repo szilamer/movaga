@@ -64,7 +64,7 @@ export default function Navbar() {
           {/* Jobb oldali menü */}
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
             {user ? (
-              <UserMenu user={user} onLogout={() => signOut()} />
+              <UserMenu user={user} onLogout={() => signOut({ callbackUrl: 'https://movaga.hu' })} />
             ) : (
               <div className="flex space-x-4">
                 <Link
@@ -128,7 +128,7 @@ export default function Navbar() {
       </div>
 
       {/* Mobil menü */}
-      <MobileMenu isOpen={isMobileMenuOpen} user={user} onLogout={() => signOut()} />
+      <MobileMenu isOpen={isMobileMenuOpen} user={user} onLogout={() => signOut({ callbackUrl: 'https://movaga.hu' })} />
     </nav>
   )
 } 

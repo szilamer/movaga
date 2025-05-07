@@ -63,7 +63,7 @@ export default function MobileMenu({ isOpen, user, onLogout }: MobileMenuProps) 
               </Link>
             )}
             <button
-              onClick={onLogout}
+              onClick={() => onLogout && onLogout()}
               className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300"
             >
               Kijelentkezés
