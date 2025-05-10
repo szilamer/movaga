@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { toast } from 'sonner';
 import { getAbsoluteImageUrl } from '@/utils/imageUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useUploadThing } from '@/lib/uploadthing';
 import { Button } from "@/components/ui/button";
 import { UploadCloud } from "lucide-react";
 
@@ -41,39 +40,11 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
       useHtmlForBusinessPartners: false,
     }
   );
-  const [uploading, setUploading] = useState<{ heroBackground: boolean; pageBackground: boolean }>({
+  const [imageUploading, setImageUploading] = useState<{ heroBackground: boolean; pageBackground: boolean }>({
     heroBackground: false,
     pageBackground: false,
   });
   const [saving, setSaving] = useState(false);
-  const [useDirectUpload, setUseDirectUpload] = useState(false);
-
-  // UploadThing configuration
-  const { startUpload, isUploading } = useUploadThing("homepageImage", {
-    onClientUploadComplete: (res) => {
-      if (res && res.length > 0) {
-        const url = res[0].url;
-        const type = res[0].name.split('-')[0]; // Extract type from filename
-        
-        setSettings(prev => ({
-          ...prev,
-          [type === 'heroBackground' ? 'heroBackgroundImage' : 'pageBackgroundImage']: url
-        }));
-        
-        toast.success(`${type === 'heroBackground' ? 'Hero háttér' : 'Oldal háttér'} kép sikeresen feltöltve!`);
-      }
-    },
-    onUploadError: (error) => {
-      console.error("UploadThing error:", error);
-      
-      if (error.message.includes("token") || error.message.includes("UploadThing not configured")) {
-        setUseDirectUpload(true);
-        toast.error("A felhő feltöltés nem érhető el, alternatív metódust használunk.");
-      } else {
-        toast.error(`Hiba történt a feltöltés során: ${error.message}`);
-      }
-    },
-  });
 
   const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -83,48 +54,36 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
 
     const file = event.target.files[0];
     
-    setUploading((prev) => ({
+    setImageUploading((prev) => ({
       ...prev,
       [type]: true,
     }));
 
     try {
-      if (useDirectUpload) {
-        // Direct upload fallback
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('type', type);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('imageType', type);
 
-        const baseUrl = window.location.origin;
-        const response = await fetch(`${baseUrl}/api/admin/homepage`, {
-          method: 'POST',
-          body: formData,
-        });
+      const baseUrl = window.location.origin;
+      const response = await fetch(`${baseUrl}/api/admin/homepage`, {
+        method: 'POST',
+        body: formData,
+      });
 
-        if (!response.ok) {
-          throw new Error('Hiba a feltöltés során');
-        }
-
-        const data = await response.json();
-        setSettings(data.settings);
-        toast.success(`${type === 'heroBackground' ? 'Hero háttér' : 'Oldal háttér'} kép sikeresen feltöltve!`);
-      } else {
-        // UploadThing upload
-        const result = await startUpload([file]);
-        if (result) {
-          const url = result[0].url;
-          setSettings(prev => ({
-            ...prev,
-            [type === 'heroBackground' ? 'heroBackgroundImage' : 'pageBackgroundImage']: url
-          }));
-          toast.success(`${type === 'heroBackground' ? 'Hero háttér' : 'Oldal háttér'} kép sikeresen feltöltve!`);
-        }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Hiba a feltöltés során' }));
+        throw new Error(errorData.message || 'Hiba a feltöltés során');
       }
-    } catch (error) {
+
+      const data = await response.json();
+      setSettings(data.settings);
+      toast.success(`${type === 'heroBackground' ? 'Hero háttér' : 'Oldal háttér'} kép sikeresen feltöltve!`);
+      
+    } catch (error: any) {
       console.error('Error uploading image:', error);
-      toast.error('Hiba történt a kép feltöltése során.');
+      toast.error(error.message || 'Hiba történt a kép feltöltése során.');
     } finally {
-      setUploading((prev) => ({
+      setImageUploading((prev) => ({
         ...prev,
         [type]: false,
       }));
@@ -205,13 +164,13 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
                     accept="image/*"
                     className="hidden"
                     onChange={(e) => handleImageUpload(e, 'heroBackground')}
-                    disabled={uploading.heroBackground}
+                    disabled={imageUploading.heroBackground}
                   />
                   <label
                     htmlFor="hero-background-image"
                     className="flex cursor-pointer items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
                   >
-                    {uploading.heroBackground ? (
+                    {imageUploading.heroBackground ? (
                       <>
                         <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24">
                           <circle
@@ -263,13 +222,13 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
                     accept="image/*"
                     className="hidden"
                     onChange={(e) => handleImageUpload(e, 'pageBackground')}
-                    disabled={uploading.pageBackground}
+                    disabled={imageUploading.pageBackground}
                   />
                   <label
                     htmlFor="page-background-image"
                     className="flex cursor-pointer items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
                   >
-                    {uploading.pageBackground ? (
+                    {imageUploading.pageBackground ? (
                       <>
                         <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24">
                           <circle
