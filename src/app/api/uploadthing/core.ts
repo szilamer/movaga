@@ -55,6 +55,39 @@ export const ourFileRouter = {
 
       return { url: file.url };
     }),
+
+  homepageImage: f({ image: { maxFileSize: '4MB', maxFileCount: 1 } })
+    .middleware(async () => {
+      try {
+        // Check for UploadThing configuration first
+        if (!hasUploadThingConfig) {
+          throw new Error("UploadThing not configured. Missing UPLOADTHING_SECRET and/or UPLOADTHING_APP_ID.");
+        }
+        
+        const session = await getServerSession(authOptions);
+
+        if (!session?.user) {
+          throw new Error('Unauthorized');
+        }
+
+        // Ellenőrizzük, hogy a felhasználó Admin vagy SuperAdmin-e
+        const isAdminUser = session.user.role === 'ADMIN' || session.user.role === 'SUPERADMIN';
+        if (!isAdminUser) {
+          throw new Error('Nincs jogosultsága a művelethez');
+        }
+
+        return { userId: session.user.id };
+      } catch (error) {
+        console.error("Middleware error:", error);
+        throw new Error("Authentication failed");
+      }
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      console.log('Upload complete for userId:', metadata.userId);
+      console.log('File URL:', file.url);
+
+      return { url: file.url };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter; 
