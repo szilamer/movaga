@@ -77,6 +77,7 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
 
       const data = await response.json();
       setSettings(data.settings);
+      console.log('Updated settings after upload:', data.settings);
       toast.success(`${type === 'heroBackground' ? 'Hero háttér' : 'Oldal háttér'} kép sikeresen feltöltve!`);
       
     } catch (error: any) {
@@ -148,6 +149,7 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
               <div className="space-y-4">
                 <div className="relative aspect-video overflow-hidden rounded-lg border">
                   <Image
+                    key={settings.heroBackgroundImage}
                     src={getAbsoluteImageUrl(settings.heroBackgroundImage)}
                     alt="Hero háttérkép"
                     fill
@@ -207,6 +209,7 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
               <div className="space-y-4">
                 <div className="relative aspect-video overflow-hidden rounded-lg border">
                   <Image
+                    key={settings.pageBackgroundImage}
                     src={getAbsoluteImageUrl(settings.pageBackgroundImage)}
                     alt="Oldal háttérkép"
                     fill
