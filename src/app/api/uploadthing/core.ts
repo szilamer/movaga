@@ -1,7 +1,6 @@
 import { createUploadthing, type FileRouter } from 'uploadthing/next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
-import { generateReactHelpers } from "@uploadthing/react";
 
 // Check if UploadThing environment variables are set
 const hasUploadThingConfig = !!(process.env.UPLOADTHING_SECRET && process.env.UPLOADTHING_APP_ID);
@@ -92,10 +91,4 @@ export const ourFileRouter = {
 } satisfies FileRouter;
 
 // A fájl router típusa
-export type OurFileRouter = typeof ourFileRouter;
-
-// Generate React hooks for uploadthing
-export const { useUploadThing, uploadFiles } = generateReactHelpers<OurFileRouter>();
-
-// Export components for convenience
-export { UploadButton, UploadDropzone } from "@uploadthing/react"; 
+export type OurFileRouter = typeof ourFileRouter; 

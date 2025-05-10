@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { toast } from 'sonner';
 import { getAbsoluteImageUrl } from '@/utils/imageUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useUploadThing } from "@/app/api/uploadthing/core";
+import { useUploadThing } from '@/lib/uploadthing';
 import { Button } from "@/components/ui/button";
 import { UploadCloud } from "lucide-react";
 
