@@ -10,7 +10,7 @@ const hasUploadThingConfig = !!(process.env.UPLOADTHING_SECRET && process.env.UP
 const f = createUploadthing({
   errorFormatter: (err) => {
     // Log the error for debugging
-    console.error("UploadThing error:", err);
+    console.error("UploadThing errorFormatter triggered:", JSON.stringify(err, null, 2));
     
     // Custom message for missing token error
     if (err?.message?.includes("Missing token")) {
@@ -24,27 +24,40 @@ const f = createUploadthing({
 
 // Middleware function to check authentication and permissions
 const checkAuth = async () => {
+  console.log("checkAuth middleware started");
   try {
     // Check for UploadThing configuration first
+    console.log("UPLOADTHING_SECRET is set:", !!process.env.UPLOADTHING_SECRET);
+    console.log("UPLOADTHING_APP_ID is set:", !!process.env.UPLOADTHING_APP_ID);
     if (!hasUploadThingConfig) {
+      console.error("UploadThing not configured in checkAuth. Missing UPLOADTHING_SECRET and/or UPLOADTHING_APP_ID.");
       throw new Error("UploadThing not configured. Missing UPLOADTHING_SECRET and/or UPLOADTHING_APP_ID.");
     }
+    console.log("UploadThing config check passed.");
     
     const session = await getServerSession(authOptions);
+    console.log("Session object:", JSON.stringify(session, null, 2));
 
     if (!session?.user) {
+      console.error("Unauthorized: No session or user found.");
       throw new Error('Unauthorized');
     }
+    console.log("Session user object:", JSON.stringify(session.user, null, 2));
 
     // Ellenőrizzük, hogy a felhasználó Admin vagy SuperAdmin-e
-    const isAdminUser = session.user.role === 'ADMIN' || session.user.role === 'SUPERADMIN';
+    const userRole = session.user.role;
+    console.log("User role:", userRole);
+    const isAdminUser = userRole === 'ADMIN' || userRole === 'SUPERADMIN';
     if (!isAdminUser) {
+      console.error("Forbidden: User does not have ADMIN or SUPERADMIN role.");
       throw new Error('Nincs jogosultsága a művelethez');
     }
+    console.log("User is Admin or SuperAdmin. UserId:", session.user.id);
 
     return { userId: session.user.id };
-  } catch (error) {
-    console.error("Middleware error:", error);
+  } catch (error: any) {
+    console.error("Middleware error in checkAuth:", error.message);
+    console.error("Full error object in checkAuth:", JSON.stringify(error, null, 2));
     throw error; // Re-throw the error to be handled by the errorFormatter
   }
 };
@@ -53,7 +66,7 @@ export const ourFileRouter = {
   productImage: f({ image: { maxFileSize: '4MB', maxFileCount: 4 } })
     .middleware(checkAuth)
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log('Upload complete for userId:', metadata.userId);
+      console.log('Upload complete for productImage. UserId:', metadata.userId);
       console.log('File URL:', file.url);
 
       return { url: file.url };
@@ -62,7 +75,7 @@ export const ourFileRouter = {
   homepageImage: f({ image: { maxFileSize: '4MB', maxFileCount: 1 } })
     .middleware(checkAuth)
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log('Upload complete for userId:', metadata.userId);
+      console.log('Upload complete for homepageImage. UserId:', metadata.userId);
       console.log('File URL:', file.url);
 
       return { url: file.url };
