@@ -76,9 +76,14 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
       }
 
       const data = await response.json();
-      setSettings(data.settings);
-      console.log('Updated settings after upload:', data.settings);
-      toast.success(`${type === 'heroBackground' ? 'Hero háttér' : 'Oldal háttér'} kép sikeresen feltöltve!`);
+      const newSettings = { ...data.settings }; 
+      setSettings(newSettings);
+      
+      const newImageUrl = type === 'heroBackground' ? newSettings.heroBackgroundImage : newSettings.pageBackgroundImage;
+      console.log(`Updated ${type} URL in state:`, newImageUrl);
+      toast.info(`Kép URL frissítve a komponens állapotában: ${newImageUrl}`, { duration: 10000 });
+
+      toast.success(`${type === 'heroBackground' ? 'Hero háttér' : 'Oldal háttér'} kép sikeresen feltöltve és mentve a szerverre!`);
       
     } catch (error: any) {
       console.error('Error uploading image:', error);
