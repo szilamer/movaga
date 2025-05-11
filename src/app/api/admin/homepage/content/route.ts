@@ -18,22 +18,11 @@ async function getSettings() {
         await mkdir(dir, { recursive: true });
       }
       
-      await writeFile(settingsFilePath, JSON.stringify({
+      const defaultSettings = {
         heroBackgroundImage: '/hero-bg.jpg',
         pageBackgroundImage: '/background.jpg',
-        heroTitle: 'Movaga',
-        heroSubtitle: 'Minőség és elegancia minden vásárlónak',
-        aboutUsTitle: 'Rólunk',
-        aboutUsContent: 'A Movaga célja, hogy prémium minőségű termékeket kínáljon felhasználóinak egy modern és felhasználóbarát webáruházon keresztül. Csapatunk elkötelezett a vásárlói élmény és az innováció mellett.',
-        businessPartnersTitle: 'Üzleti partnereknek',
-        businessPartnersContent: 'Csatlakozz jutalékalapú rendszerünkhöz üzletkötőként, és növeld bevételeidet könnyedén.',
-        useHtmlForAboutUs: false,
-        useHtmlForBusinessPartners: false,
-      }));
-      
-      return {
-        heroBackgroundImage: '/hero-bg.jpg',
-        pageBackgroundImage: '/background.jpg',
+        usePageBackgroundColor: false,
+        pageBackgroundColor: '#FFFFFF',
         heroTitle: 'Movaga',
         heroSubtitle: 'Minőség és elegancia minden vásárlónak',
         aboutUsTitle: 'Rólunk',
@@ -43,15 +32,44 @@ async function getSettings() {
         useHtmlForAboutUs: false,
         useHtmlForBusinessPartners: false,
       };
+      await writeFile(settingsFilePath, JSON.stringify(defaultSettings));
+      return defaultSettings;
     }
     
-    const data = await readFile(settingsFilePath, 'utf8');
-    return JSON.parse(data);
+    const fileContent = await readFile(settingsFilePath, 'utf8');
+    const currentSettingsFromFile = JSON.parse(fileContent);
+
+    // Alapértelmezett értékek, amelyek akkor is léteznek, ha a fájlban nincsenek meg
+    const defaultValues = {
+      heroBackgroundImage: '/hero-bg.jpg',
+      pageBackgroundImage: '/background.jpg',
+      usePageBackgroundColor: false,
+      pageBackgroundColor: '#FFFFFF',
+      heroTitle: 'Movaga',
+      heroSubtitle: 'Minőség és elegancia minden vásárlónak',
+      aboutUsTitle: 'Rólunk',
+      aboutUsContent: 'A Movaga célja, hogy prémium minőségű termékeket kínáljon felhasználóinak egy modern és felhasználóbarát webáruházon keresztül. Csapatunk elkötelezett a vásárlói élmény és az innováció mellett.',
+      businessPartnersTitle: 'Üzleti partnereknek',
+      businessPartnersContent: 'Csatlakozz jutalékalapú rendszerünkhöz üzletkötőként, és növeld bevételeidet könnyedén.',
+      useHtmlForAboutUs: false,
+      useHtmlForBusinessPartners: false,
+    };
+
+    // Összefésüljük az alapértelmezett értékeket a fájlból olvasottakkal,
+    // ahol a fájlból olvasottak felülírják az alapértelmezetteket.
+    return {
+      ...defaultValues,
+      ...currentSettingsFromFile,
+    };
+
   } catch (error) {
     console.error('Error reading settings:', error);
+    // Visszaadja az alapértelmezett beállításokat hiba esetén is
     return {
       heroBackgroundImage: '/hero-bg.jpg',
       pageBackgroundImage: '/background.jpg',
+      usePageBackgroundColor: false,
+      pageBackgroundColor: '#FFFFFF',
       heroTitle: 'Movaga',
       heroSubtitle: 'Minőség és elegancia minden vásárlónak',
       aboutUsTitle: 'Rólunk',
@@ -105,6 +123,8 @@ export async function POST(request: NextRequest) {
       businessPartnersContent: data.businessPartnersContent || currentSettings.businessPartnersContent,
       useHtmlForAboutUs: data.useHtmlForAboutUs !== undefined ? data.useHtmlForAboutUs : currentSettings.useHtmlForAboutUs,
       useHtmlForBusinessPartners: data.useHtmlForBusinessPartners !== undefined ? data.useHtmlForBusinessPartners : currentSettings.useHtmlForBusinessPartners,
+      usePageBackgroundColor: data.usePageBackgroundColor !== undefined ? data.usePageBackgroundColor : currentSettings.usePageBackgroundColor,
+      pageBackgroundColor: data.pageBackgroundColor !== undefined ? data.pageBackgroundColor : currentSettings.pageBackgroundColor,
     };
     
     // Mentjük a frissített beállításokat

@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth/authOptions';
 import { existsSync } from 'fs';
 import { v2 as cloudinary, type UploadApiResponse, type UploadApiErrorResponse } from 'cloudinary';
 import streamifier from 'streamifier';
+import { type HomepageSettings } from '@/lib/settings';
 
 // Cloudinary konfiguráció (győződj meg róla, hogy a környezeti változók be vannak állítva)
 cloudinary.config({
@@ -20,9 +21,11 @@ const settingsFilePath = join(process.cwd(), 'public/uploads/homepage', 'setting
 const settingsDir = join(process.cwd(), 'public/uploads/homepage');
 
 // Alapértelmezett beállítások
-const defaultSettings = {
+const defaultSettings: HomepageSettings = {
   heroBackgroundImage: '/hero-bg.jpg',
   pageBackgroundImage: '/background.jpg',
+  usePageBackgroundColor: false,
+  pageBackgroundColor: '#FFFFFF',
   heroTitle: 'Movaga',
   heroSubtitle: 'Minőség és elegancia minden vásárlónak',
   aboutUsTitle: 'Rólunk',

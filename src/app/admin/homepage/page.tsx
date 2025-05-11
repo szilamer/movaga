@@ -2,31 +2,23 @@ import { HomepageEditor } from '@/components/admin/HomepageEditor';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import { redirect } from 'next/navigation';
+import { getHomepageSettings, type HomepageSettings } from '@/lib/settings';
 
 export default async function HomepageEditorPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
     redirect('/auth/login');
+    return null;
   }
 
   if (!['ADMIN', 'SUPERADMIN'].includes(session.user.role as string)) {
     redirect('/');
+    return null;
   }
 
-  // Lekérjük a jelenlegi beállításokat
-  let settings;
-  try {
-    // Használjunk relatív URL-t a fetch-hez
-    const response = await fetch('/api/admin/homepage', { 
-      cache: 'no-store' 
-    });
-    if (response.ok) {
-      settings = await response.json();
-    }
-  } catch (error) {
-    console.error('Error fetching homepage settings:', error);
-  }
+  // Lekérjük a jelenlegi beállításokat közvetlenül a fájlrendszerből
+  const settings: HomepageSettings = await getHomepageSettings();
 
   return (
     <div>

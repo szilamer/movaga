@@ -1,54 +1,26 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 
-interface HomepageSettings {
-  businessPartnersTitle: string;
-  businessPartnersContent: string;
-  useHtmlForBusinessPartners: boolean;
+interface BusinessPartnersSectionProps {
+  title: string;
+  content: string;
+  useHtml: boolean;
 }
 
-export default function BusinessPartnersSection() {
-  const [settings, setSettings] = useState<HomepageSettings>({
-    businessPartnersTitle: 'Üzleti partnereknek',
-    businessPartnersContent: 'Csatlakozz jutalékalapú rendszerünkhöz üzletkötőként, és növeld bevételeidet könnyedén.',
-    useHtmlForBusinessPartners: false,
-  });
-
-  useEffect(() => {
-    // Beállítások betöltése
-    const fetchSettings = async () => {
-      try {
-        const baseUrl = window.location.origin;
-        const response = await fetch(`${baseUrl}/api/admin/homepage`);
-        if (response.ok) {
-          const data = await response.json();
-          setSettings({
-            businessPartnersTitle: data.businessPartnersTitle,
-            businessPartnersContent: data.businessPartnersContent,
-            useHtmlForBusinessPartners: data.useHtmlForBusinessPartners,
-          });
-        }
-      } catch (error) {
-        console.error('Error loading homepage settings:', error);
-      }
-    };
-
-    fetchSettings();
-  }, []);
-
+export default function BusinessPartnersSection({ title, content, useHtml }: BusinessPartnersSectionProps) {
   return (
-    <section className="bg-black py-12 text-white">
-      <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold mb-4 text-gold-500">{settings.businessPartnersTitle}</h2>
-        {settings.useHtmlForBusinessPartners ? (
+    <section className="w-full bg-gray-900 py-12 md:py-16 text-white">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <h2 className="text-3xl md:text-4xl font-bold mb-6 text-center text-gold-500">{title}</h2>
+        {useHtml ? (
           <div 
-            className="text-lg text-gray-300" 
-            dangerouslySetInnerHTML={{ __html: settings.businessPartnersContent }}
+            className="prose prose-lg prose-invert mx-auto text-gray-300 text-justify" 
+            dangerouslySetInnerHTML={{ __html: content }}
           />
         ) : (
-          <p className="text-lg text-gray-300">
-            {settings.businessPartnersContent}
+          <p className="text-lg md:text-xl text-gray-300 text-justify mx-auto">
+            {content}
           </p>
         )}
       </div>
