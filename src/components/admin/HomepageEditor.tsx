@@ -155,11 +155,12 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
                 <div className="relative aspect-video overflow-hidden rounded-lg border">
                   <Image
                     key={settings.heroBackgroundImage}
-                    src={getAbsoluteImageUrl(settings.heroBackgroundImage)}
+                    src={settings.heroBackgroundImage}
                     alt="Hero háttérkép"
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, 500px"
+                    unoptimized
                   />
                   <div className="absolute inset-0 bg-black/20 pointer-events-none"></div>
                 </div>
@@ -215,11 +216,12 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
                 <div className="relative aspect-video overflow-hidden rounded-lg border">
                   <Image
                     key={settings.pageBackgroundImage}
-                    src={getAbsoluteImageUrl(settings.pageBackgroundImage)}
+                    src={settings.pageBackgroundImage}
                     alt="Oldal háttérkép"
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, 500px"
+                    unoptimized
                   />
                 </div>
                 
@@ -425,7 +427,7 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
                 <div className="relative overflow-hidden rounded-lg">
                   <div 
                     className="h-64 w-full bg-cover bg-center filter grayscale hover:filter-none transition-filter duration-1000"
-                    style={{ backgroundImage: `url('${getAbsoluteImageUrl(settings.heroBackgroundImage)}')` }}
+                    style={{ backgroundImage: `url('${settings.heroBackgroundImage}')` }}
                   />
                   <div className="absolute inset-0 bg-black/60 hover:bg-black/20 transition-colors duration-1000 flex flex-col items-center justify-center">
                     <div className="relative w-40 h-40 mb-4">
@@ -468,7 +470,7 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
               <h3 className="text-lg font-medium mt-6">Oldal háttérkép</h3>
               <div 
                 className="h-32 w-full rounded-lg bg-cover bg-center opacity-70"
-                style={{ backgroundImage: `url('${getAbsoluteImageUrl(settings.pageBackgroundImage)}')` }}
+                style={{ backgroundImage: `url('${settings.pageBackgroundImage}')` }}
               />
               <p className="text-sm text-gray-500">Az oldal háttérkép a teljes weboldal hátterében jelenik meg.</p>
             </div>
