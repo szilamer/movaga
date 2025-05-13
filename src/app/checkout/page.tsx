@@ -788,7 +788,7 @@ export default function CheckoutPage() {
 
         <div className="lg:col-span-4">
           <div className="rounded-lg border border-border bg-background p-6 text-foreground">
-            <h2 className="mb-4 text-lg font-semibold">Rendelés összegzése</h2>
+            <h2 className="mb-4 text-lg font-semibold text-black">Rendelés összegzése</h2>
             
             <div className="space-y-4">
               <div className="flex justify-between">
@@ -801,7 +801,7 @@ export default function CheckoutPage() {
                 <span>{formatPrice(shippingCost)}</span>
               </div>
 
-              <div className="flex justify-between border-t pt-4 font-bold">
+              <div className="flex justify-between border-t pt-4 font-bold text-black">
                 <span>Végösszeg:</span>
                 <span>{formatPrice(total)}</span>
               </div>
