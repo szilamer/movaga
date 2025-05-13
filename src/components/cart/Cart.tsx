@@ -189,7 +189,7 @@ export default function Cart() {
         ))}
       </div>
       <div className="mt-4 text-right">
-        <p className="text-xl font-bold" style={{ color: 'black' }}>
+        <p className="text-xl font-bold bg-white inline-block px-3 py-1 rounded text-black">
           Összesen: {cart.total.toLocaleString('hu-HU')} Ft
         </p>
       </div>
