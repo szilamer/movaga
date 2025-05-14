@@ -94,10 +94,10 @@ export default function Cart() {
   if (!session) {
     return (
       <div className="p-4 text-center">
-        <p className="mb-4">A kosár megtekintéséhez be kell jelentkezned.</p>
+        <p className="mb-4 bg-white inline-block px-3 py-1 rounded text-black">A kosár megtekintéséhez be kell jelentkezned.</p>
         <Link
           href="/auth/signin"
-          className="text-blue-600 hover:text-blue-800 underline"
+          className="text-blue-600 hover:text-blue-800 underline bg-white px-3 py-1 rounded"
         >
           Bejelentkezés
         </Link>
@@ -108,15 +108,15 @@ export default function Cart() {
   if (loading) {
     return (
       <div className="p-4 text-center">
-        <p>Betöltés...</p>
+        <p className="bg-white inline-block px-3 py-1 rounded text-black">Betöltés...</p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="p-4 text-center text-red-600">
-        <p>{error}</p>
+      <div className="p-4 text-center">
+        <p className="text-red-600 bg-white inline-block px-3 py-1 rounded">{error}</p>
       </div>
     )
   }
@@ -124,13 +124,16 @@ export default function Cart() {
   if (!cart || cart.items.length === 0) {
     return (
       <div className="p-4 text-center">
-        <p>A kosarad üres.</p>
-        <Link
-          href="/products"
-          className="text-blue-600 hover:text-blue-800 underline"
-        >
-          Vásárlás folytatása
-        </Link>
+        <h1 className="text-2xl font-bold mb-4 bg-white inline-block px-3 py-1 rounded text-black">Kosár</h1>
+        <p className="mb-4 bg-white inline-block px-3 py-1 rounded text-black">A kosarad üres.</p>
+        <div className="mt-4">
+          <Link
+            href="/products"
+            className="text-blue-600 hover:text-blue-800 underline bg-white px-3 py-1 rounded"
+          >
+            Vásárlás folytatása
+          </Link>
+        </div>
       </div>
     )
   }
