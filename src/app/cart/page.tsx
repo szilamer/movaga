@@ -46,18 +46,18 @@ export default function CartPage() {
 
         <div className="lg:col-span-4">
           <div className="rounded-lg border bg-white p-6">
-            <h2 className="mb-4 text-lg font-semibold">Összegzés</h2>
+            <h2 className="mb-4 text-lg font-semibold text-black">Összegzés</h2>
             
             <div className="space-y-4">
               <div className="flex justify-between border-t pt-4">
-                <span className="font-medium">Végösszeg:</span>
-                <span className="font-bold">{formatPrice(getTotal())}</span>
+                <span className="font-medium text-black">Végösszeg:</span>
+                <span className="font-bold text-black">{formatPrice(getTotal())}</span>
               </div>
 
               <div className="space-y-2">
                 <button
                   onClick={() => router.push('/checkout')}
-                  className="w-full rounded-lg bg-primary px-8 py-3 font-medium text-white transition-colors hover:bg-primary/90"
+                  className="w-full rounded-lg bg-primary px-8 py-3 font-medium text-black transition-colors hover:bg-primary/90"
                 >
                   Tovább a megrendeléshez
                 </button>
