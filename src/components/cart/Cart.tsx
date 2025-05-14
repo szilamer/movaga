@@ -137,12 +137,12 @@ export default function Cart() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Kosár</h1>
+      <h1 className="text-2xl font-bold mb-4 bg-white inline-block px-3 py-1 rounded text-black">Kosár</h1>
       <div className="space-y-4">
         {cart.items.map((item) => (
           <div
             key={item.id}
-            className="flex items-center justify-between border p-4 rounded"
+            className="flex items-center justify-between border p-4 rounded bg-white text-black"
           >
             <div className="flex-1">
               <h3 className="font-semibold">{item.product.name}</h3>
@@ -159,7 +159,7 @@ export default function Cart() {
                   onClick={() =>
                     updateQuantity(item.id, Math.max(1, item.quantity - 1))
                   }
-                  className="px-2 py-1 bg-gray-200 rounded"
+                  className="px-2 py-1 bg-gray-200 rounded text-black"
                   disabled={item.quantity <= 1}
                 >
                   -
@@ -172,7 +172,7 @@ export default function Cart() {
                       Math.min(item.product.stock, item.quantity + 1)
                     )
                   }
-                  className="px-2 py-1 bg-gray-200 rounded"
+                  className="px-2 py-1 bg-gray-200 rounded text-black"
                   disabled={item.quantity >= item.product.stock}
                 >
                   +

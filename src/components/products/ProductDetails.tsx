@@ -66,10 +66,10 @@ export function ProductDetails({ product }: ProductDetailsProps) {
         </div>
         
         <div>
-          <h1 className="mb-4 text-3xl font-bold text-gray-900">{product.name}</h1>
+          <h1 className="mb-4 text-3xl font-bold text-black bg-white inline-block px-3 py-1 rounded">{product.name}</h1>
           
           <div className="mb-4">
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-gray-500 bg-white inline-block px-2 py-1 rounded">
               {typeof product.category === 'string' ? product.category : product.category?.name || 'Kategória nélkül'}
             </span>
           </div>
@@ -77,23 +77,23 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           <div className="mb-6">
             {priceInfo.hasDiscount ? (
               <div className="flex items-center">
-                <span className="text-2xl font-bold text-primary">
+                <span className="text-2xl font-bold text-primary bg-white inline-block px-2 py-1 rounded">
                   {formatPrice(priceInfo.finalPrice)}
                 </span>
-                <span className="ml-2 text-sm text-gray-500 line-through">
+                <span className="ml-2 text-sm text-gray-500 line-through bg-white inline-block px-2 py-1 rounded">
                   {formatPrice(priceInfo.originalPrice)}
                 </span>
               </div>
             ) : (
-              <span className="text-2xl font-bold text-primary">
+              <span className="text-2xl font-bold text-primary bg-white inline-block px-2 py-1 rounded">
                 {formatPrice(priceInfo.finalPrice)}
               </span>
             )}
           </div>
           
           <div className="mb-6">
-            <h2 className="mb-2 text-lg font-semibold">Termék leírása</h2>
-            <p className="text-gray-700">{product.description}</p>
+            <h2 className="mb-2 text-lg font-semibold text-black bg-white inline-block px-2 py-1 rounded">Termék leírása</h2>
+            <p className="text-black bg-white p-3 rounded">{product.description}</p>
           </div>
           
           {product.descriptionSections && product.descriptionSections.length > 0 && (
@@ -101,11 +101,11 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           )}
           
           <div className="mb-6">
-            <h2 className="mb-2 text-lg font-semibold">Raktárkészlet</h2>
+            <h2 className="mb-2 text-lg font-semibold text-black bg-white inline-block px-2 py-1 rounded">Raktárkészlet</h2>
             {product.stock > 0 ? (
-              <p className="text-green-500">Raktáron - {product.stock} db elérhető</p>
+              <p className="text-green-500 bg-white inline-block px-2 py-1 rounded">Raktáron - {product.stock} db elérhető</p>
             ) : (
-              <p className="text-red-500">Elfogyott</p>
+              <p className="text-red-500 bg-white inline-block px-2 py-1 rounded">Elfogyott</p>
             )}
           </div>
           
