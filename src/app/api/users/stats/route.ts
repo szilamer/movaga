@@ -144,7 +144,8 @@ export async function GET() {
           where: {
             createdAt: {
               gte: new Date(new Date().setDate(1)) // Aktuális hónap első napja
-            }
+            },
+            status: 'COMPLETED' // Csak teljesített rendelések számítanak
           },
           include: {
             items: true
@@ -292,10 +293,11 @@ export async function GET() {
             where: {
               createdAt: {
                 gte: new Date(new Date().setDate(1))
-              }
+              },
+              status: 'COMPLETED' // Csak teljesített rendelések számítanak
             },
-            select: {
-              total: true
+            include: {
+              items: true
             }
           }
         }
@@ -313,27 +315,37 @@ export async function GET() {
             where: {
               createdAt: {
                 gte: new Date(new Date().setDate(1))
-              }
+              },
+              status: 'COMPLETED' // Csak teljesített rendelések számítanak
             },
-            select: {
-              total: true
+            include: {
+              items: true
             }
           }
         }
       }) as NetworkMember[];
     }
 
-    // Havi forgalom számítása
-    const monthlySales = user.orders.reduce((total: number, order: OrderWithItems) => total + order.total, 0)
+    // Havi forgalom számítása - csak a termékek ára (szállítási költség nélkül)
+    const monthlySales = user.orders.reduce((total: number, order: OrderWithItems) => {
+      // Csak a termékek árát számítjuk, nem az order.total-t (ami tartalmazza a szállítási költséget is)
+      const orderItemsTotal = order.items.reduce((itemsTotal, item) => itemsTotal + (item.price * item.quantity), 0);
+      return total + orderItemsTotal;
+    }, 0);
 
-    // Hálózati forgalom számítása
+    // Hálózati forgalom számítása - csak a termékek ára (szállítási költség nélkül)
     const networkMembersSales = networkMembers.map((member: NetworkMember) => ({
       id: member.id,
       name: member.name,
       email: member.email,
-      monthlySales: member.orders.reduce((total: number, order: { total: number }) => total + order.total, 0),
+      monthlySales: member.orders.reduce((total: number, order: any) => {
+        // Csak a termékek árát számítjuk
+        const orderItemsTotal = order.items.reduce((itemsTotal: number, item: any) => 
+          itemsTotal + (item.price * item.quantity), 0);
+        return total + orderItemsTotal;
+      }, 0),
       joinedAt: member.createdAt
-    }))
+    }));
 
     const totalNetworkSales = networkMembersSales.reduce((total: number, member: { monthlySales: number }) => total + member.monthlySales, 0)
 
@@ -363,7 +375,8 @@ export async function GET() {
           where: {
             createdAt: {
               gte: new Date(new Date().setDate(1))
-            }
+            },
+            status: 'COMPLETED' // Csak teljesített rendelések számítanak
           }
         }))._sum.total || 0
       : totalNetworkSales;
@@ -393,19 +406,30 @@ export async function GET() {
       
       salesHistory = await Promise.all(
         lastSixMonths.map(async ({startDate, endDate, monthLabel}) => {
-          const monthlyTotal = await prisma.order.aggregate({
-            _sum: { total: true },
+          // Lekérdezzük az összes rendelést az adott időszakban
+          const completedOrders = await prisma.order.findMany({
             where: {
               createdAt: {
                 gte: startDate,
                 lt: endDate
-              }
+              },
+              status: 'COMPLETED' // Csak teljesített rendelések számítanak
+            },
+            include: {
+              items: true
             }
           });
           
+          // Számoljuk ki a termékek árát (szállítási költség nélkül)
+          const monthlyTotal = completedOrders.reduce((total, order) => {
+            const orderItemsTotal = order.items.reduce((itemsTotal, item) => 
+              itemsTotal + (item.price * item.quantity), 0);
+            return total + orderItemsTotal;
+          }, 0);
+          
           return {
             date: monthLabel,
-            amount: monthlyTotal._sum.total || 0
+            amount: monthlyTotal
           };
         })
       );

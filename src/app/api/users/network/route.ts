@@ -40,17 +40,25 @@ async function getNetworkMembersRecursive(userId: string, depth: number = 0, max
 
   const membersWithSalesAndChildren: NetworkMember[] = await Promise.all(
     members.map(async (member): Promise<NetworkMember> => {
-      const monthlySales = await prisma.order.aggregate({
+      const completedOrders = await prisma.order.findMany({
         where: {
           userId: member.id,
           createdAt: {
             gte: firstDayOfMonth,
           },
+          status: 'COMPLETED' // Csak teljesített rendelések számítanak
         },
-        _sum: {
-          total: true,
-        },
+        include: {
+          items: true
+        }
       });
+
+      // Számoljuk ki a termékek árát (szállítási költség nélkül)
+      const monthlySalesTotal = completedOrders.reduce((total, order) => {
+        const orderItemsTotal = order.items.reduce((itemsTotal, item) => 
+          itemsTotal + (item.price * item.quantity), 0);
+        return total + orderItemsTotal;
+      }, 0);
 
       const children: NetworkMember[] = await getNetworkMembersRecursive(member.id, depth + 1, maxDepth);
 
@@ -58,7 +66,7 @@ async function getNetworkMembersRecursive(userId: string, depth: number = 0, max
         id: member.id,
         name: member.name,
         email: member.email,
-        monthlySales: monthlySales._sum.total || 0,
+        monthlySales: monthlySalesTotal,
         joinedAt: member.createdAt,
         role: member.role,
         referralCount: member._count.referrals,
@@ -154,17 +162,25 @@ async function getAdminAsRoot(userId: string, session: any): Promise<NetworkMemb
   const now = new Date()
   const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   
-  const monthlySales = await prisma.order.aggregate({
+  const completedOrders = await prisma.order.findMany({
     where: {
       userId: admin.id,
       createdAt: {
         gte: firstDayOfMonth,
       },
+      status: 'COMPLETED' // Csak teljesített rendelések számítanak
     },
-    _sum: {
-      total: true,
-    },
+    include: {
+      items: true
+    }
   });
+
+  // Számoljuk ki a termékek árát (szállítási költség nélkül)
+  const monthlySalesTotal = completedOrders.reduce((total, order) => {
+    const orderItemsTotal = order.items.reduce((itemsTotal, item) => 
+      itemsTotal + (item.price * item.quantity), 0);
+    return total + orderItemsTotal;
+  }, 0);
   
   // Lekérjük az admin közvetlen hálózati tagjait
   const children = await getNetworkMembersRecursive(admin.id);
@@ -177,7 +193,7 @@ async function getAdminAsRoot(userId: string, session: any): Promise<NetworkMemb
     id: admin.id,
     name: admin.name,
     email: admin.email,
-    monthlySales: monthlySales._sum.total || 0,
+    monthlySales: monthlySalesTotal,
     joinedAt: admin.createdAt,
     role: admin.role,
     referralCount: admin._count.referrals,
@@ -210,17 +226,25 @@ async function getNullReferrerUsers(): Promise<NetworkMember[]> {
   
   const usersWithSalesAndChildren: NetworkMember[] = await Promise.all(
     users.map(async (user): Promise<NetworkMember> => {
-      const monthlySales = await prisma.order.aggregate({
+      const completedOrders = await prisma.order.findMany({
         where: {
           userId: user.id,
           createdAt: {
             gte: firstDayOfMonth,
           },
+          status: 'COMPLETED' // Csak teljesített rendelések számítanak
         },
-        _sum: {
-          total: true,
-        },
+        include: {
+          items: true
+        }
       });
+
+      // Számoljuk ki a termékek árát (szállítási költség nélkül)
+      const monthlySalesTotal = completedOrders.reduce((total, order) => {
+        const orderItemsTotal = order.items.reduce((itemsTotal, item) => 
+          itemsTotal + (item.price * item.quantity), 0);
+        return total + orderItemsTotal;
+      }, 0);
 
       const children: NetworkMember[] = await getNetworkMembersRecursive(user.id);
 
@@ -228,7 +252,7 @@ async function getNullReferrerUsers(): Promise<NetworkMember[]> {
         id: user.id,
         name: user.name,
         email: user.email,
-        monthlySales: monthlySales._sum.total || 0,
+        monthlySales: monthlySalesTotal,
         joinedAt: user.createdAt,
         role: user.role,
         referralCount: user._count.referrals,
