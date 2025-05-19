@@ -54,7 +54,18 @@ export async function GET(request: Request) {
           select: {
             id: true,
             total: true,
-            createdAt: true
+            createdAt: true,
+            items: {
+              select: {
+                quantity: true,
+                product: {
+                  select: {
+                    name: true,
+                    pointValue: true
+                  }
+                }
+              }
+            }
           }
         },
         referrals: {

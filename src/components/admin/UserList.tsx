@@ -21,6 +21,7 @@ interface User {
   totalSales: number;
   networkSales: number;
   children: User[];
+  orders: Order[];
 }
 
 interface UserNodeProps {
@@ -28,6 +29,21 @@ interface UserNodeProps {
   level: number;
   expanded: Set<string>;
   onToggle: (id: string) => void;
+}
+
+interface OrderItem {
+  quantity: number;
+  product?: {
+    name?: string;
+    pointValue?: number;
+  };
+}
+
+interface Order {
+  id: string;
+  total: number;
+  createdAt: string;
+  items: OrderItem[];
 }
 
 const UserNode = ({ user, level, expanded, onToggle }: UserNodeProps) => {
@@ -73,6 +89,29 @@ const UserNode = ({ user, level, expanded, onToggle }: UserNodeProps) => {
           onToggle={onToggle}
         />
       ))}
+      {user.orders && user.orders.length > 0 && (
+        <div className="mt-2">
+          <div className="font-semibold text-sm text-gray-700">Vásárlások:</div>
+          <ul className="ml-4 list-disc text-xs text-gray-600">
+            {user.orders.map(order => (
+              <li key={order.id} className="mb-1">
+                <div>
+                  <span className="font-medium">{new Date(order.createdAt).toLocaleDateString('hu-HU')}</span> – Összeg: {order.total.toLocaleString()} Ft
+                </div>
+                {order.items && order.items.length > 0 && (
+                  <ul className="ml-4 list-square">
+                    {order.items.map((item: OrderItem, idx: number) => (
+                      <li key={idx}>
+                        {item.product?.name} – {item.quantity} db – <span className="text-blue-700 font-semibold">{item.product?.pointValue ?? 0} pont/db</span> (össz: {item.quantity * (item.product?.pointValue ?? 0)} pont)
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };
