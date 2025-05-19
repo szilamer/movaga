@@ -17,6 +17,7 @@ model User {
   role            String           @default("USER")
   monthlySales    Int              @default(0)
   discountPercent Int              @default(0)
+  discountValidUntil DateTime?
   referrerId      String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -104,6 +105,7 @@ model Product {
   images              String[]
   categoryId          String
   stock               Int
+  pointValue          Int           @default(0)
   status              ProductStatus @default(ACTIVE)
   sku                 String?       @unique
   metaTitle           String?

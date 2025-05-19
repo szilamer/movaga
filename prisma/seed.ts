@@ -1,9 +1,9 @@
 // Próbáljuk betölteni a bcrypt-et, ha nem sikerül, használjuk az auth.ts-ben lévő hashPassword függvényt
-let hashPassword;
+let hashPassword: (password: string) => Promise<string>;
 try {
   const { hash } = require('bcrypt');
   const SALT_ROUNDS = 10;
-  hashPassword = async (password) => await hash(password, SALT_ROUNDS);
+  hashPassword = async (password: string) => await hash(password, SALT_ROUNDS);
   console.log('Using bcrypt for password hashing');
 } catch (error) {
   // Ha a bcrypt nem elérhető, használjuk a saját SHA-256 implementációt
