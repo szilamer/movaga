@@ -75,19 +75,31 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           </div>
           
           <div className="mb-6">
-            {priceInfo.hasDiscount ? (
-              <div className="flex items-center">
+            {/* Ár megjelenítése */}
+            <div>
+              {priceInfo.hasDiscount ? (
+                <div className="flex items-baseline">
+                  <span className="text-2xl font-bold text-primary bg-white inline-block px-2 py-1 rounded">
+                    {formatPrice(priceInfo.finalPrice)}
+                  </span>
+                  <span className="ml-2 text-sm text-gray-500 line-through bg-white inline-block px-2 py-1 rounded">
+                    {formatPrice(priceInfo.originalPrice)}
+                  </span>
+                </div>
+              ) : (
                 <span className="text-2xl font-bold text-primary bg-white inline-block px-2 py-1 rounded">
                   {formatPrice(priceInfo.finalPrice)}
                 </span>
-                <span className="ml-2 text-sm text-gray-500 line-through bg-white inline-block px-2 py-1 rounded">
-                  {formatPrice(priceInfo.originalPrice)}
+              )}
+            </div>
+
+            {/* Jutalompontok megjelenítése az ár alatt */}
+            {product.pointValue && product.pointValue > 0 && (
+              <div className="mt-1">
+                <span className="text-sm text-gray-700 bg-white inline-block px-2 py-1 rounded">
+                  Jutalékpont: <span className="font-semibold text-primary">{product.pointValue}</span>
                 </span>
               </div>
-            ) : (
-              <span className="text-2xl font-bold text-primary bg-white inline-block px-2 py-1 rounded">
-                {formatPrice(priceInfo.finalPrice)}
-              </span>
             )}
           </div>
           
@@ -95,14 +107,6 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             <h2 className="mb-2 text-lg font-semibold text-black bg-white inline-block px-2 py-1 rounded">Termék leírása</h2>
             <p className="text-black bg-white p-3 rounded">{product.description}</p>
           </div>
-          
-          {/* Pontérték megjelenítése */} 
-          {product.pointValue && product.pointValue > 0 && (
-            <div className="mb-6">
-              <h2 className="mb-2 text-lg font-semibold text-black bg-white inline-block px-2 py-1 rounded">Jutalompontok</h2>
-              <p className="text-blue-600 font-semibold bg-white inline-block px-2 py-1 rounded">Ez a termék {product.pointValue} pontot ér.</p>
-            </div>
-          )}
           
           {Array.isArray(product.descriptionSections) && product.descriptionSections.length > 0 && (
             <ProductAccordion sections={product.descriptionSections} />
