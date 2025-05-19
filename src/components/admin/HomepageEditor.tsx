@@ -32,8 +32,8 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
   const [settings, setSettings] = useState<HomepageSettings>(
     initialSettings || {
       heroBackgroundImage: '/hero-bg.jpg',
-      pageBackgroundImage: '/background.jpg',
-      usePageBackgroundColor: false,
+      pageBackgroundImage: '',
+      usePageBackgroundColor: true,
       pageBackgroundColor: '#FFFFFF',
       heroTitle: 'Movaga',
       heroSubtitle: 'Minőség és elegancia minden vásárlónak',
