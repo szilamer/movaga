@@ -22,6 +22,7 @@ interface FormData {
   metaTitle?: string;
   metaDescription?: string;
   images: string[];
+  pointValue?: number;
 }
 
 interface ProductFormProps {
@@ -41,6 +42,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
         stock: 0,
         status: 'ACTIVE',
         images: [],
+        pointValue: 0,
       };
     }
     let parsedDescriptionSections: DescriptionSection[] = [];
@@ -62,6 +64,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
       ...initialData,
       descriptionSections: parsedDescriptionSections,
       images: initialData.images || [],
+      pointValue: initialData.pointValue ?? 0,
     };
   });
 
@@ -117,6 +120,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
           stock: 0,
           status: 'ACTIVE',
           images: [],
+          pointValue: 0,
         });
       }
     } catch (error) {
@@ -244,6 +248,21 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             value={formData.discountedPrice || ''}
             onChange={(e) => setFormData({ ...formData, discountedPrice: e.target.value ? parseFloat(e.target.value) : undefined })}
+          />
+        </div>
+        <div>
+          <label htmlFor="pointValue" className="block text-sm font-medium text-gray-700">
+            Pontérték
+          </label>
+          <input
+            type="number"
+            name="pointValue"
+            id="pointValue"
+            min="0"
+            required
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            value={formData.pointValue ?? 0}
+            onChange={(e) => setFormData({ ...formData, pointValue: parseInt(e.target.value) || 0 })}
           />
         </div>
       </div>

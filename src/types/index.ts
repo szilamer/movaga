@@ -23,6 +23,7 @@ export interface Product {
   metaDescription?: string | null
   createdAt?: Date
   updatedAt?: Date
+  pointValue?: number
 }
 
 export interface Category {
