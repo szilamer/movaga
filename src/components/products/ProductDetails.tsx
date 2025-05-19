@@ -96,7 +96,15 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             <p className="text-black bg-white p-3 rounded">{product.description}</p>
           </div>
           
-          {product.descriptionSections && product.descriptionSections.length > 0 && (
+          {/* Pontérték megjelenítése */} 
+          {product.pointValue && product.pointValue > 0 && (
+            <div className="mb-6">
+              <h2 className="mb-2 text-lg font-semibold text-black bg-white inline-block px-2 py-1 rounded">Jutalompontok</h2>
+              <p className="text-blue-600 font-semibold bg-white inline-block px-2 py-1 rounded">Ez a termék {product.pointValue} pontot ér.</p>
+            </div>
+          )}
+          
+          {Array.isArray(product.descriptionSections) && product.descriptionSections.length > 0 && (
             <ProductAccordion sections={product.descriptionSections} />
           )}
           

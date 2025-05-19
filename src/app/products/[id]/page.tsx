@@ -61,6 +61,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     metaDescription: product.metaDescription,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
+    pointValue: product.pointValue ?? 0
   };
 
   return (

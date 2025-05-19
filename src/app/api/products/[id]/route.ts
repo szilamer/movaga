@@ -66,6 +66,7 @@ export async function PUT(
       metaTitle,
       metaDescription,
       images,
+      pointValue
     } = json
 
     if (!name || !description || !price || !categoryId || !stock || !status) {
@@ -109,6 +110,7 @@ export async function PUT(
         metaTitle: metaTitle || null,
         metaDescription: metaDescription || null,
         images: images || [],
+        pointValue: pointValue !== undefined ? Number(pointValue) : 0
       },
     })
     
