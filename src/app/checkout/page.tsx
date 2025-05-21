@@ -406,8 +406,8 @@ export default function CheckoutPage() {
         toast.success('Rendelését rögzítettük!');
       }
 
-      // Redirect to order confirmation page
-      router.push(`/orders/${order.id}`);
+      // Redirect to thank you page
+      router.push('/thank-you');
     } catch (error) {
       console.error('Order submission error:', error);
       toast.error('Hiba történt a rendelés feldolgozása során. Kérjük, próbálja újra!');
