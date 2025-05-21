@@ -138,17 +138,24 @@ export async function GET() {
     // Felhasználó adatainak lekérése
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
+      select: {
+        id: true,
+        discountPercent: true,
+        discountValidUntil: true,
         referrals: true,
         orders: {
-          where: {
-            createdAt: {
-              gte: new Date(new Date().setDate(1)) // Aktuális hónap első napja
-            },
-            status: 'COMPLETED' // Csak teljesített rendelések számítanak
-          },
-          include: {
-            items: true
+          select: {
+            createdAt: true,
+            items: {
+              select: {
+                quantity: true,
+                product: {
+                  select: {
+                    pointValue: true
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -326,44 +333,67 @@ export async function GET() {
       }) as NetworkMember[];
     }
 
-    // Havi forgalom számítása - csak a termékek ára (szállítási költség nélkül)
-    const monthlySales = user.orders.reduce((total: number, order: OrderWithItems) => {
-      // Csak a termékek árát számítjuk, nem az order.total-t (ami tartalmazza a szállítási költséget is)
-      const orderItemsTotal = order.items.reduce((itemsTotal, item) => itemsTotal + (item.price * item.quantity), 0);
-      return total + orderItemsTotal;
-    }, 0);
-
-    // Hálózati forgalom számítása - csak a termékek ára (szállítási költség nélkül)
-    const networkMembersSales = networkMembers.map((member: NetworkMember) => ({
+    // Hálózati tagok forgalmának számítása (változatlan)
+    const networkMembersSales = networkMembers.map((member: any) => ({
       id: member.id,
       name: member.name,
       email: member.email,
       monthlySales: member.orders.reduce((total: number, order: any) => {
-        // Csak a termékek árát számítjuk
-        const orderItemsTotal = order.items.reduce((itemsTotal: number, item: any) => 
+        const orderItemsTotal = order.items.reduce((itemsTotal: number, item: any) =>
           itemsTotal + (item.price * item.quantity), 0);
         return total + orderItemsTotal;
       }, 0),
       joinedAt: member.createdAt
     }));
+    const totalNetworkSales = networkMembersSales.reduce((total: number, member: { monthlySales: number }) => total + member.monthlySales, 0);
 
-    const totalNetworkSales = networkMembersSales.reduce((total: number, member: { monthlySales: number }) => total + member.monthlySales, 0)
+    // Aktuális hónap pontjainak számítása
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const monthlyPoints = user.orders
+      .filter(order => order.createdAt >= monthStart && order.createdAt < monthEnd)
+      .reduce((total, order) => {
+        const orderPoints = order.items.reduce((itemTotal, item) =>
+          itemTotal + (item.product?.pointValue || 0) * item.quantity, 0);
+        return total + orderPoints;
+      }, 0);
 
-    // Kedvezmény szint számítása - Adminoknak mindig a legmagasabb
+    // Kedvezmény szint számítása 3 hónapos érvényességgel, pontok alapján
     let discountLevel = isAdmin ? 100 : 0;
-    
-    if (!isAdmin) {
-      if (monthlySales >= 100000) {
-        discountLevel = 30;
-      } else if (monthlySales >= 50000) {
-        discountLevel = 15;
-      }
+    let discountValidUntil = user.discountValidUntil ? new Date(user.discountValidUntil) : null;
+    let shouldUpdate = false;
+    let newDiscountValidUntil = discountValidUntil;
 
-      // Frissítsük a felhasználó kedvezményszintjét az adatbázisban is
-      if (user.discountPercent !== discountLevel) {
+    if (!isAdmin) {
+      // Ha most eléri valamelyik szintet, frissítjük a szintet és a lejárati dátumot
+      if (monthlyPoints >= 100) {
+        discountLevel = 30;
+        newDiscountValidUntil = new Date(monthEnd);
+        newDiscountValidUntil.setMonth(newDiscountValidUntil.getMonth() + 3);
+        shouldUpdate = true;
+      } else if (monthlyPoints >= 50) {
+        discountLevel = 15;
+        newDiscountValidUntil = new Date(monthEnd);
+        newDiscountValidUntil.setMonth(newDiscountValidUntil.getMonth() + 3);
+        shouldUpdate = true;
+      } else if (discountValidUntil && discountValidUntil > now) {
+        // Ha még érvényes a kedvezmény, megtartjuk a szintet
+        discountLevel = user.discountPercent;
+      } else {
+        // Lejárt a kedvezmény
+        discountLevel = 0;
+        newDiscountValidUntil = null;
+        shouldUpdate = true;
+      }
+      // Csak akkor frissítünk, ha változott valami
+      if (
+        user.discountPercent !== discountLevel ||
+        (discountValidUntil?.getTime() !== newDiscountValidUntil?.getTime())
+      ) {
         await prisma.user.update({
           where: { id: user.id },
-          data: { discountPercent: discountLevel }
+          data: { discountPercent: discountLevel, discountValidUntil: newDiscountValidUntil },
         });
       }
     }
@@ -459,6 +489,7 @@ export async function GET() {
       monthlySales: isAdmin ? totalSales : monthlySales,
       networkSize: networkMembers.length,
       discountLevel,
+      discountValidUntil: newDiscountValidUntil,
       commission,
       salesHistory,
       networkMembers: networkMembersSales,
