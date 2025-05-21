@@ -713,7 +713,7 @@ export default function CheckoutPage() {
                 <div className="mt-6 flex justify-between">
                   <button
                     onClick={() => setStep('address')}
-                    className="rounded-lg border border-primary px-8 py-3 font-medium text-primary transition-colors hover:bg-gray-100"
+                    className="rounded-lg border border-primary px-8 py-3 font-medium text-black transition-colors hover:bg-gray-100"
                   >
                     Vissza
                   </button>
@@ -750,7 +750,7 @@ export default function CheckoutPage() {
                 <div className="mt-6 flex justify-between">
                   <button
                     onClick={() => setStep('shipping')}
-                    className="rounded-lg border border-primary px-8 py-3 font-medium text-primary transition-colors hover:bg-gray-100"
+                    className="rounded-lg border border-primary px-8 py-3 font-medium text-black transition-colors hover:bg-gray-100"
                   >
                     Vissza
                   </button>
