@@ -12,8 +12,9 @@ import { BarionService, BarionPaymentRequest } from '@/lib/barion'
 import Link from 'next/link'
 
 const PAYMENT_METHODS = {
-  BARION: { name: 'Barion online fizetés', fee: 0 },
-  CASH_ON_DELIVERY: { name: 'Utánvét', fee: 0 },
+  // BARION: { name: 'Barion online fizetés', fee: 0 }, // Temporarily disabled until token is available
+  CASH_ON_DELIVERY: { name: 'Utánvét', fee: 500 },
+  BANK_TRANSFER: { name: 'Banki átutalás', fee: 0 },
 } as const
 
 interface AddressFormValues {
@@ -46,7 +47,7 @@ export default function CheckoutPage() {
   const { items, getTotal, clearCart } = useCart()
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([])
   const [selectedShippingMethod, setSelectedShippingMethod] = useState<ShippingMethod | null>(null)
-  const [paymentMethod, setPaymentMethod] = useState<keyof typeof PAYMENT_METHODS>('BARION')
+  const [paymentMethod, setPaymentMethod] = useState<keyof typeof PAYMENT_METHODS>('BANK_TRANSFER')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [step, setStep] = useState<'address' | 'shipping' | 'payment'>('address')
   const [sameAsShipping, setSameAsShipping] = useState(true)
@@ -264,6 +265,7 @@ export default function CheckoutPage() {
       const formData = watch()
 
       // Ha Barion fizetést választott
+      /* Temporarily disabled until token is available
       if (paymentMethod === 'BARION') {
         // Közvetlen POS key használata fallback értékként
         const posKey = 'fab5fa17-77a6-4cf6-a5ae-a5cb81e264d8';
@@ -333,45 +335,6 @@ export default function CheckoutPage() {
           ],
         };
 
-        // Rendelés létrehozása az adatbázisban
-        const orderResponse = await fetch('/api/orders', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            items: items.map(item => ({
-              id: item.id,
-              quantity: item.quantity,
-              price: item.price
-            })),
-            shippingMethodId: selectedShippingMethod?.id,
-            paymentMethod: PAYMENT_METHODS[paymentMethod].name,
-            total: total,
-            barionPaymentId: paymentRequestId,
-            
-            // Szállítási cím
-            shippingFullName: formData.shippingFullName,
-            shippingCountry: formData.shippingCountry,
-            shippingCity: formData.shippingCity,
-            shippingAddress: formData.shippingAddress,
-            shippingZipCode: formData.shippingZipCode,
-            shippingPhone: formData.shippingPhone,
-            shippingEmail: formData.shippingEmail,
-            
-            // Számlázási cím
-            billingFullName: formData.sameAsShipping ? formData.shippingFullName : formData.billingFullName,
-            billingCountry: formData.sameAsShipping ? formData.shippingCountry : formData.billingCountry,
-            billingCity: formData.sameAsShipping ? formData.shippingCity : formData.billingCity,
-            billingAddress: formData.sameAsShipping ? formData.shippingAddress : formData.billingAddress,
-            billingZipCode: formData.sameAsShipping ? formData.shippingZipCode : formData.billingZipCode,
-            billingPhone: formData.sameAsShipping ? formData.shippingPhone : formData.billingPhone,
-            billingCompanyName: formData.isCompany ? formData.billingCompanyName : null,
-            billingTaxNumber: formData.isCompany ? formData.billingTaxNumber : null
-          }),
-        });
-
         if (!orderResponse.ok) {
           throw new Error('Hiba történt a rendelés létrehozása során');
         }
@@ -383,8 +346,13 @@ export default function CheckoutPage() {
         window.location.href = paymentUrl;
         return;
       }
+      */
 
-      // Ha más fizetési módot választott
+      // Calculate total with payment method fee
+      const paymentFee = PAYMENT_METHODS[paymentMethod].fee || 0;
+      const totalWithFees = total + paymentFee;
+
+      // Create order
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
@@ -399,7 +367,7 @@ export default function CheckoutPage() {
           })),
           shippingMethodId: selectedShippingMethod?.id,
           paymentMethod: PAYMENT_METHODS[paymentMethod].name,
-          total: total,
+          total: totalWithFees,
           
           // Szállítási cím
           shippingFullName: formData.shippingFullName,
@@ -417,30 +385,36 @@ export default function CheckoutPage() {
           billingAddress: formData.sameAsShipping ? formData.shippingAddress : formData.billingAddress,
           billingZipCode: formData.sameAsShipping ? formData.shippingZipCode : formData.billingZipCode,
           billingPhone: formData.sameAsShipping ? formData.shippingPhone : formData.billingPhone,
-          billingCompanyName: formData.isCompany ? formData.billingCompanyName : null,
-          billingTaxNumber: formData.isCompany ? formData.billingTaxNumber : null
+          billingCompanyName: formData.isCompany ? formData.billingCompanyName : undefined,
+          billingTaxNumber: formData.isCompany ? formData.billingTaxNumber : undefined,
         }),
       });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Hiba történt a rendelés során')
+        throw new Error('Hiba történt a rendelés létrehozása során');
       }
 
-      const order = await response.json()
-      
-      // Kosár ürítése
-      clearCart()
-      
-      // Átirányítás a thank you oldalra
-      router.push('/thank-you')
+      const order = await response.json();
+
+      // Clear cart
+      clearCart();
+
+      // Show success message based on payment method
+      if (paymentMethod === 'BANK_TRANSFER') {
+        toast.success(`Rendelését rögzítettük! Rendelés azonosító: ${order.id}. Kérjük, az utalásnál a közlemény rovatban tüntesse fel ezt az azonosítót.`);
+      } else {
+        toast.success('Rendelését rögzítettük!');
+      }
+
+      // Redirect to order confirmation page
+      router.push(`/orders/${order.id}`);
     } catch (error) {
-      console.error('Rendelés hiba:', error)
-      toast.error(error instanceof Error ? error.message : 'Hiba történt a rendelés során')
+      console.error('Order submission error:', error);
+      toast.error('Hiba történt a rendelés feldolgozása során. Kérjük, próbálja újra!');
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   // Értékek figyelése
   const formValues = watch()

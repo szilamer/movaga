@@ -144,6 +144,18 @@ export default async function OrderConfirmationPage({
               <span className="font-medium">Fizetési mód:</span>
               <span>{order.paymentMethod}</span>
             </div>
+            {order.paymentMethod === 'Banki átutalás' && (
+              <div className="mt-4 rounded-lg bg-blue-50 p-4">
+                <h3 className="mb-2 font-semibold text-blue-800">Banki átutalás adatai</h3>
+                <div className="space-y-2 text-sm text-blue-700">
+                  <p><span className="font-medium">Kedvezményezett:</span> Movaga Kft.</p>
+                  <p><span className="font-medium">Bankszámlaszám:</span> 11111111-22222222-33333333</p>
+                  <p><span className="font-medium">Közlemény:</span> {order.id}</p>
+                  <p><span className="font-medium">Összeg:</span> {formatPrice(order.total)}</p>
+                  <p className="mt-2 text-xs">Kérjük, a közlemény rovatban mindenképp tüntesse fel a rendelés azonosítót!</p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mb-6">

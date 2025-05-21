@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, OrderStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -19,11 +19,21 @@ async function main() {
           <p><strong>Végösszeg:</strong> {{total}}</p>
           <p><strong>Szállítási mód:</strong> {{shippingMethod}}</p>
           <p><strong>Fizetési mód:</strong> {{paymentMethod}}</p>
+          {{#if isBankTransfer}}
+          <div style="margin-top: 20px; padding: 15px; background-color: #f0f7ff; border-radius: 5px;">
+            <h3 style="color: #1e40af; margin-top: 0;">Banki átutalás adatai</h3>
+            <p style="color: #1e3a8a; margin: 5px 0;"><strong>Kedvezményezett:</strong> Movaga Kft.</p>
+            <p style="color: #1e3a8a; margin: 5px 0;"><strong>Bankszámlaszám:</strong> 11111111-22222222-33333333</p>
+            <p style="color: #1e3a8a; margin: 5px 0;"><strong>Közlemény:</strong> {{orderNumber}}</p>
+            <p style="color: #1e3a8a; margin: 5px 0;"><strong>Összeg:</strong> {{total}}</p>
+            <p style="color: #1e3a8a; margin-top: 10px; font-size: 0.9em;">Kérjük, a közlemény rovatban mindenképp tüntesse fel a rendelés azonosítót!</p>
+          </div>
+          {{/if}}
           <p>Hamarosan értesítünk a rendelésed állapotának változásáról.</p>
           <p>Üdvözlettel,<br>A Movaga csapata</p>
         </div>
       `,
-      triggerStatus: 'PENDING',
+      triggerStatus: 'PENDING' as OrderStatus,
       isActive: true,
     },
     {

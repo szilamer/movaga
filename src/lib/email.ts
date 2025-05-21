@@ -416,7 +416,21 @@ export async function sendOrderStatusEmail({
       if (template) {
         console.log(`[EMAIL] Email template found in database: ${template.name}`);
         subject = template.subject;
-        html = template.content;
+        // Replace template variables
+        html = template.content
+          .replace(/{{orderNumber}}/g, orderNumber)
+          .replace(/{{total}}/g, formatPrice(total))
+          .replace(/{{shippingMethod}}/g, shippingMethod)
+          .replace(/{{paymentMethod}}/g, paymentMethod);
+
+        // Handle bank transfer specific template
+        if (paymentMethod === 'Banki átutalás') {
+          html = html.replace('{{#if isBankTransfer}}', '')
+                    .replace('{{/if}}', '');
+        } else {
+          // Remove bank transfer section if not bank transfer
+          html = html.replace(/{{#if isBankTransfer}}[\s\S]*?{{\/if}}/g, '');
+        }
       } else {
         console.log(`[EMAIL] No active email template found for order status: ${orderStatus}, using fallback`);
         // Fall back to default templates
@@ -433,6 +447,16 @@ export async function sendOrderStatusEmail({
               <p>Kedves Vásárlónk!</p>
               <p>Értesítünk, hogy a #${orderNumber} számú rendelés állapota megváltozott: ${orderStatus}</p>
               <p>Végösszeg: ${formatPrice(total)}</p>
+              ${paymentMethod === 'Banki átutalás' ? `
+              <div style="margin-top: 20px; padding: 15px; background-color: #f0f7ff; border-radius: 5px;">
+                <h3 style="color: #1e40af; margin-top: 0;">Banki átutalás adatai</h3>
+                <p style="color: #1e3a8a; margin: 5px 0;"><strong>Kedvezményezett:</strong> Movaga Kft.</p>
+                <p style="color: #1e3a8a; margin: 5px 0;"><strong>Bankszámlaszám:</strong> 11111111-22222222-33333333</p>
+                <p style="color: #1e3a8a; margin: 5px 0;"><strong>Közlemény:</strong> ${orderNumber}</p>
+                <p style="color: #1e3a8a; margin: 5px 0;"><strong>Összeg:</strong> ${formatPrice(total)}</p>
+                <p style="color: #1e3a8a; margin-top: 10px; font-size: 0.9em;">Kérjük, a közlemény rovatban mindenképp tüntesse fel a rendelés azonosítót!</p>
+              </div>
+              ` : ''}
               <p>Üdvözlettel,<br>A Movaga csapata</p>
             </div>
           `;
@@ -454,6 +478,16 @@ export async function sendOrderStatusEmail({
             <p>Kedves Vásárlónk!</p>
             <p>Értesítünk, hogy a #${orderNumber} számú rendelés állapota megváltozott: ${orderStatus}</p>
             <p>Végösszeg: ${formatPrice(total)}</p>
+            ${paymentMethod === 'Banki átutalás' ? `
+            <div style="margin-top: 20px; padding: 15px; background-color: #f0f7ff; border-radius: 5px;">
+              <h3 style="color: #1e40af; margin-top: 0;">Banki átutalás adatai</h3>
+              <p style="color: #1e3a8a; margin: 5px 0;"><strong>Kedvezményezett:</strong> Movaga Kft.</p>
+              <p style="color: #1e3a8a; margin: 5px 0;"><strong>Bankszámlaszám:</strong> 11111111-22222222-33333333</p>
+              <p style="color: #1e3a8a; margin: 5px 0;"><strong>Közlemény:</strong> ${orderNumber}</p>
+              <p style="color: #1e3a8a; margin: 5px 0;"><strong>Összeg:</strong> ${formatPrice(total)}</p>
+              <p style="color: #1e3a8a; margin-top: 10px; font-size: 0.9em;">Kérjük, a közlemény rovatban mindenképp tüntesse fel a rendelés azonosítót!</p>
+            </div>
+            ` : ''}
             <p>Üdvözlettel,<br>A Movaga csapata</p>
           </div>
         `;
