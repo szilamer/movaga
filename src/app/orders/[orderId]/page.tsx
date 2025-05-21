@@ -6,7 +6,6 @@ import { formatPrice } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useSession } from 'next-auth/react';
-import { prisma } from '@/lib/prisma';
 
 interface OrderItem {
   id: string;
@@ -27,7 +26,13 @@ interface Order {
   items: OrderItem[];
 }
 
-export default async function OrderConfirmationPage({
+interface ShippingMethod {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export default function OrderConfirmationPage({
   params,
 }: {
   params: { orderId: string };
@@ -35,18 +40,30 @@ export default async function OrderConfirmationPage({
   const router = useRouter();
   const { data: session } = useSession();
   const [order, setOrder] = useState<Order | null>(null);
+  const [shippingMethod, setShippingMethod] = useState<ShippingMethod | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchOrder = async () => {
+    const fetchOrderAndShippingMethod = async () => {
       try {
-        const response = await fetch(`/api/orders/${params.orderId}`);
-        if (!response.ok) {
+        // Fetch order details
+        const orderResponse = await fetch(`/api/orders/${params.orderId}`);
+        if (!orderResponse.ok) {
           throw new Error('Hiba történt a rendelés betöltése közben');
         }
-        const data = await response.json();
-        setOrder(data);
+        const orderData = await orderResponse.json();
+        setOrder(orderData);
+
+        // Fetch shipping method details
+        if (orderData.shippingMethod) {
+          const shippingResponse = await fetch(`/api/shipping-methods/${encodeURIComponent(orderData.shippingMethod)}`);
+          if (shippingResponse.ok) {
+            const shippingData = await shippingResponse.json();
+            setShippingMethod(shippingData);
+          }
+        }
+
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Ismeretlen hiba történt');
@@ -56,15 +73,8 @@ export default async function OrderConfirmationPage({
       }
     };
 
-    fetchOrder();
+    fetchOrderAndShippingMethod();
   }, [params.orderId]);
-
-  // Fetch shipping method details
-  const shippingMethod = await prisma.shippingMethod.findFirst({
-    where: {
-      name: order?.shippingMethod,
-    },
-  });
 
   if (loading) {
     return (
