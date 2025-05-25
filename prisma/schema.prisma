@@ -102,6 +102,8 @@ model Product {
   description         String
   price               Float
   discountedPrice     Float?
+  discountLevel1Price Float?       // First level discount price
+  discountLevel2Price Float?       // Second level discount price
   images              String[]
   categoryId          String
   stock               Int

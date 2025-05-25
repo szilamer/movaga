@@ -13,6 +13,8 @@ export interface Product {
   descriptionSections?: DescriptionSection[] | Prisma.JsonValue
   price: number
   discountedPrice?: number | null
+  discountLevel1Price?: number | null  // First level discount price
+  discountLevel2Price?: number | null  // Second level discount price
   images: string[]
   categoryId: string
   category?: Category

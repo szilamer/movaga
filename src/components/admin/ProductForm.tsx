@@ -15,6 +15,8 @@ interface FormData {
   descriptionSections?: DescriptionSection[];
   price: number;
   discountedPrice?: number;
+  discountLevel1Price?: number;  // First level discount price
+  discountLevel2Price?: number;  // Second level discount price
   categoryId: string;
   stock: number;
   status: ProductStatus;
@@ -238,7 +240,7 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
         </div>
         <div>
           <label htmlFor="discountedPrice" className="block text-sm font-medium text-gray-700">
-            Kedvezményes ár (Ft, opcionális)
+            Akciós ár (Ft, opcionális)
           </label>
           <input
             type="number"
@@ -248,6 +250,34 @@ export const ProductForm = ({ categories, initialData }: ProductFormProps) => {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             value={formData.discountedPrice || ''}
             onChange={(e) => setFormData({ ...formData, discountedPrice: e.target.value ? parseFloat(e.target.value) : undefined })}
+          />
+        </div>
+        <div>
+          <label htmlFor="discountLevel1Price" className="block text-sm font-medium text-gray-700">
+            1. szintű kedvezményes ár (Ft, opcionális)
+          </label>
+          <input
+            type="number"
+            name="discountLevel1Price"
+            id="discountLevel1Price"
+            min="0"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            value={formData.discountLevel1Price || ''}
+            onChange={(e) => setFormData({ ...formData, discountLevel1Price: e.target.value ? parseFloat(e.target.value) : undefined })}
+          />
+        </div>
+        <div>
+          <label htmlFor="discountLevel2Price" className="block text-sm font-medium text-gray-700">
+            2. szintű kedvezményes ár (Ft, opcionális)
+          </label>
+          <input
+            type="number"
+            name="discountLevel2Price"
+            id="discountLevel2Price"
+            min="0"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            value={formData.discountLevel2Price || ''}
+            onChange={(e) => setFormData({ ...formData, discountLevel2Price: e.target.value ? parseFloat(e.target.value) : undefined })}
           />
         </div>
         <div>

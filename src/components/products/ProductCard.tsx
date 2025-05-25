@@ -13,7 +13,12 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { getDiscountedPrice } = useDiscount();
-  const priceInfo = getDiscountedPrice(product.price, product.discountedPrice);
+  const priceInfo = getDiscountedPrice(
+    product.price, 
+    product.discountedPrice,
+    product.discountLevel1Price,
+    product.discountLevel2Price
+  );
   
   // Use the first image or a default if no images are available
   const imageUrl = product.images && product.images.length > 0 
@@ -45,28 +50,39 @@ export function ProductCard({ product }: ProductCardProps) {
           <span className="text-xs text-gray-500">{categoryName}</span>
         </div>
         
-        <div className="flex items-center justify-between">
+        <div className="mt-2 flex items-center justify-between">
           <div>
             {priceInfo.hasDiscount ? (
-              <div className="flex items-center">
-                <span className="text-lg font-bold text-gray-900">
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-primary">
                   {formatPrice(priceInfo.finalPrice)}
                 </span>
-                <span className="ml-2 text-xs text-gray-500 line-through">
+                <span className="text-sm text-gray-500 line-through">
                   {formatPrice(priceInfo.originalPrice)}
                 </span>
               </div>
             ) : (
-              <span className="text-lg font-bold text-gray-900">
+              <span className="text-lg font-bold text-primary">
                 {formatPrice(priceInfo.finalPrice)}
               </span>
             )}
+            
+            {(product.discountLevel1Price || product.discountLevel2Price) && (
+              <div className="mt-1 space-y-1 text-xs text-gray-600">
+                {product.discountLevel1Price && (
+                  <div>1. szintű ár: {formatPrice(product.discountLevel1Price)}</div>
+                )}
+                {product.discountLevel2Price && (
+                  <div>2. szintű ár: {formatPrice(product.discountLevel2Price)}</div>
+                )}
+              </div>
+            )}
           </div>
           
-          {product.stock > 0 ? (
-            <span className="text-sm text-green-500">Raktáron</span>
-          ) : (
-            <span className="text-sm text-red-500">Elfogyott</span>
+          {product.pointValue && product.pointValue > 0 && (
+            <div className="text-sm text-gray-600">
+              {product.pointValue} pont
+            </div>
           )}
         </div>
       </div>

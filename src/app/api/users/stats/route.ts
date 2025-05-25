@@ -360,7 +360,7 @@ export async function GET() {
       }, 0);
 
     // Kedvezmény szint számítása 3 hónapos érvényességgel, pontok alapján
-    let discountLevel = isAdmin ? 100 : 0;
+    let discountLevel = isAdmin ? 2 : 0;  // Admin mindig 2-es szinten van
     let discountValidUntil = user.discountValidUntil ? new Date(user.discountValidUntil) : null;
     let shouldUpdate = false;
     let newDiscountValidUntil = discountValidUntil;
@@ -368,18 +368,18 @@ export async function GET() {
     if (!isAdmin) {
       // Ha most eléri valamelyik szintet, frissítjük a szintet és a lejárati dátumot
       if (monthlyPoints >= 100) {
-        discountLevel = 30;
+        discountLevel = 2;  // 2-es szint
         newDiscountValidUntil = new Date(monthEnd);
         newDiscountValidUntil.setMonth(newDiscountValidUntil.getMonth() + 3);
         shouldUpdate = true;
       } else if (monthlyPoints >= 50) {
-        discountLevel = 15;
+        discountLevel = 1;  // 1-es szint
         newDiscountValidUntil = new Date(monthEnd);
         newDiscountValidUntil.setMonth(newDiscountValidUntil.getMonth() + 3);
         shouldUpdate = true;
       } else if (discountValidUntil && discountValidUntil > now) {
         // Ha még érvényes a kedvezmény, megtartjuk a szintet
-        discountLevel = user.discountPercent;
+        discountLevel = user.discountPercent === 30 ? 2 : user.discountPercent === 15 ? 1 : 0;
       } else {
         // Lejárt a kedvezmény
         discountLevel = 0;
@@ -388,12 +388,17 @@ export async function GET() {
       }
       // Csak akkor frissítünk, ha változott valami
       if (
-        user.discountPercent !== discountLevel ||
+        (user.discountPercent === 30 && discountLevel !== 2) ||
+        (user.discountPercent === 15 && discountLevel !== 1) ||
+        (user.discountPercent === 0 && discountLevel !== 0) ||
         (discountValidUntil?.getTime() !== newDiscountValidUntil?.getTime())
       ) {
         await prisma.user.update({
           where: { id: user.id },
-          data: { discountPercent: discountLevel, discountValidUntil: newDiscountValidUntil },
+          data: { 
+            discountPercent: discountLevel === 2 ? 30 : discountLevel === 1 ? 15 : 0,
+            discountValidUntil: newDiscountValidUntil 
+          },
         });
       }
     }

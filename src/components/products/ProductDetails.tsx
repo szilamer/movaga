@@ -16,7 +16,12 @@ interface ProductDetailsProps {
 
 export function ProductDetails({ product }: ProductDetailsProps) {
   const { getDiscountedPrice } = useDiscount();
-  const priceInfo = getDiscountedPrice(product.price, product.discountedPrice);
+  const priceInfo = getDiscountedPrice(
+    product.price, 
+    product.discountedPrice,
+    product.discountLevel1Price,
+    product.discountLevel2Price
+  );
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   
   // Ensure we have an array of images or provide a default
@@ -92,6 +97,22 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                 </span>
               )}
             </div>
+
+            {/* Kedvezményes árak megjelenítése */}
+            {(product.discountLevel1Price || product.discountLevel2Price) && (
+              <div className="mt-2 space-y-1">
+                {product.discountLevel1Price && (
+                  <div className="text-sm text-gray-700 bg-white inline-block px-2 py-1 rounded mr-2">
+                    1. szintű ár: <span className="font-semibold text-primary">{formatPrice(product.discountLevel1Price)}</span>
+                  </div>
+                )}
+                {product.discountLevel2Price && (
+                  <div className="text-sm text-gray-700 bg-white inline-block px-2 py-1 rounded">
+                    2. szintű ár: <span className="font-semibold text-primary">{formatPrice(product.discountLevel2Price)}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Jutalompontok megjelenítése az ár alatt */}
             {product.pointValue && product.pointValue > 0 && (

@@ -27,30 +27,37 @@ export function formatPrice(price: number) {
  * Kiszámítja a kedvezményes árat a felhasználó kedvezményszintje alapján
  * @param price - Eredeti ár
  * @param discountedPrice - Akciós ár (ha van)
- * @param userDiscountPercent - Felhasználó kedvezményszintje (százalékban)
+ * @param discountLevel1Price - 1. szintű kedvezményes ár (ha van)
+ * @param discountLevel2Price - 2. szintű kedvezményes ár (ha van)
+ * @param userDiscountLevel - Felhasználó kedvezményszintje (0, 1, vagy 2)
  * @returns Objektum az eredeti, discount és végső árral, valamint hogy van-e kedvezmény
  */
 export function calculateDiscountedPrice(
   price: number, 
-  discountedPrice: number | null | undefined, 
-  userDiscountPercent: number
+  discountedPrice: number | null | undefined,
+  discountLevel1Price: number | null | undefined,
+  discountLevel2Price: number | null | undefined,
+  userDiscountLevel: number
 ) {
   // Ha van termék akciós ár, azt vesszük alapul
-  const basePrice = discountedPrice && discountedPrice < price ? discountedPrice : price;
+  let basePrice = discountedPrice && discountedPrice < price ? discountedPrice : price;
   
-  // A felhasználói kedvezmény százalékos értéke (pl. 25% = 0.25)
-  const userDiscountMultiplier = userDiscountPercent / 100;
+  // A felhasználói kedvezményszint alapján számoljuk a végső árat
+  let finalPrice = basePrice;
   
-  // A felhasználói kedvezménnyel számolt ár
-  const userDiscountedPrice = Math.round(basePrice * (1 - userDiscountMultiplier));
+  if (userDiscountLevel === 1 && discountLevel1Price) {
+    finalPrice = discountLevel1Price;
+  } else if (userDiscountLevel === 2 && discountLevel2Price) {
+    finalPrice = discountLevel2Price;
+  }
   
   return {
     originalPrice: price,
     // Ha a termék akciós, akkor az akciós ár, egyébként null
     productDiscountedPrice: discountedPrice && discountedPrice < price ? discountedPrice : null,
-    // A végső ár, amil a felhasználói kedvezmény is figyelembe van véve
-    finalPrice: userDiscountedPrice,
+    // A végső ár, ami a felhasználói kedvezményszint alapján van kiszámolva
+    finalPrice: finalPrice,
     // Van-e bármilyen kedvezmény
-    hasDiscount: userDiscountedPrice < price
+    hasDiscount: finalPrice < price
   };
 }

@@ -109,20 +109,22 @@ export async function POST(request: Request) {
       descriptionSections,
       price,
       discountedPrice,
+      discountLevel1Price,
+      discountLevel2Price,
       categoryId,
       stock,
       status,
       sku,
       metaTitle,
       metaDescription,
-      images
+      images,
+      pointValue
     } = json
 
-    // Validáljuk a kötelező mezőket
-    if (!name || !description || !price || !categoryId || stock === undefined) {
+    if (!name || !description || !price || !categoryId || !stock || !status) {
       return new NextResponse('Missing required fields', { status: 400 })
     }
-    
+
     // Handle different representations of descriptionSections to ensure it is valid for Prisma
     let processedDescriptionSections;
     
@@ -141,8 +143,6 @@ export async function POST(request: Request) {
       processedDescriptionSections = descriptionSections;
     }
 
-    console.log("Final processed descriptionSections:", processedDescriptionSections);
-
     const product = await prisma.product.create({
       data: {
         name,
@@ -150,6 +150,8 @@ export async function POST(request: Request) {
         descriptionSections: processedDescriptionSections,
         price: Number(price),
         discountedPrice: discountedPrice ? Number(discountedPrice) : null,
+        discountLevel1Price: discountLevel1Price ? Number(discountLevel1Price) : null,
+        discountLevel2Price: discountLevel2Price ? Number(discountLevel2Price) : null,
         categoryId,
         stock: Number(stock),
         status,
@@ -157,6 +159,7 @@ export async function POST(request: Request) {
         metaTitle: metaTitle || null,
         metaDescription: metaDescription || null,
         images: images || [],
+        pointValue: pointValue !== undefined ? Number(pointValue) : 0
       },
     })
     
