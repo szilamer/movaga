@@ -13,7 +13,7 @@ import Link from 'next/link'
 
 const PAYMENT_METHODS = {
   // BARION: { name: 'Barion online fizetés', fee: 0 }, // Temporarily disabled until token is available
-  CASH_ON_DELIVERY: { name: 'Utánvét', fee: 500 },
+  CASH_ON_DELIVERY: { name: 'Készpénzes fizetés', fee: 500 },
   BANK_TRANSFER: { name: 'Banki átutalás', fee: 0 },
 } as const
 
@@ -264,90 +264,6 @@ export default function CheckoutPage() {
       // Címadatok lekérése az űrlapból
       const formData = watch()
 
-      // Ha Barion fizetést választott
-      /* Temporarily disabled until token is available
-      if (paymentMethod === 'BARION') {
-        // Közvetlen POS key használata fallback értékként
-        const posKey = 'fab5fa17-77a6-4cf6-a5ae-a5cb81e264d8';
-        console.log('Using hardcoded POS Key for client');
-
-        const barionService = new BarionService(posKey, true);
-        
-        // Generate a unique payment ID
-        const paymentRequestId = `PAY-${Date.now()}`;
-        
-        const paymentRequest: BarionPaymentRequest = {
-          POSKey: posKey,
-          PaymentType: 'Immediate',
-          ReservationPeriod: '00:01:00', // Minimum 1 perc
-          DelayedCapturePeriod: '00:01:00', // Minimum 1 perc
-          PaymentWindow: '00:30:00', // 30 perc
-          GuestCheckOut: true,
-          InitiateRecurrence: false,
-          RecurrenceType: '',
-          RecurrenceId: '',
-          FundingSources: ['All'],
-          PaymentRequestId: paymentRequestId,
-          PayerHint: '',
-          CardHolderNameHint: '',
-          Items: items.map(item => ({
-            Name: item.name,
-            Description: item.description || '',
-            Quantity: item.quantity,
-            Unit: 'piece',
-            UnitPrice: item.price,
-            ItemTotal: item.price * item.quantity,
-            SKU: item.id.toString(),
-          })),
-          ShippingAddress: {
-            Country: 'HU',
-            City: formData.shippingCity,
-            Zip: formData.shippingZipCode,
-            Street: formData.shippingAddress,
-            FullName: formData.shippingFullName,
-          },
-          BillingAddress: {
-            Country: 'HU',
-            City: formData.sameAsShipping ? formData.shippingCity : formData.billingCity,
-            Zip: formData.sameAsShipping ? formData.shippingZipCode : formData.billingZipCode,
-            Street: formData.sameAsShipping ? formData.shippingAddress : formData.billingAddress,
-            FullName: formData.sameAsShipping ? formData.shippingFullName : formData.billingFullName,
-          },
-          RedirectUrl: `${window.location.origin}/payment/success`,
-          CallbackUrl: `${window.location.origin}/api/payment/callback`,
-          Currency: 'HUF',
-          Transactions: [
-            {
-              POSTransactionId: `TRANS-${Date.now()}`,
-              Payee: 'szilamer@gmail.com', // Barion fiók email címe
-              Total: total,
-              Comment: 'Rendelés fizetése',
-              Items: items.map(item => ({
-                Name: item.name,
-                Description: item.description || '',
-                Quantity: item.quantity,
-                Unit: 'piece',
-                UnitPrice: item.price,
-                ItemTotal: item.price * item.quantity,
-                SKU: item.id.toString(),
-              })),
-            },
-          ],
-        };
-
-        if (!orderResponse.ok) {
-          throw new Error('Hiba történt a rendelés létrehozása során');
-        }
-
-        const order = await orderResponse.json();
-
-        // Barion fizetési oldalra irányítás
-        const paymentUrl = await barionService.startPayment(paymentRequest);
-        window.location.href = paymentUrl;
-        return;
-      }
-      */
-
       // Calculate total with payment method fee
       const paymentFee = PAYMENT_METHODS[paymentMethod].fee || 0;
       const totalWithFees = total + paymentFee;
@@ -399,15 +315,14 @@ export default function CheckoutPage() {
       // Clear cart
       clearCart();
 
-      // Show success message based on payment method
+      // Show success message and redirect based on payment method
       if (paymentMethod === 'BANK_TRANSFER') {
-        toast.success(`Rendelését rögzítettük! Rendelés azonosító: ${order.id}. Kérjük, az utalásnál a közlemény rovatban tüntesse fel ezt az azonosítót.`);
+        toast.success(`Rendelését rögzítettük! Rendelés azonosító: ${order.id}`);
+        router.push(`/payment/bank-transfer/${order.id}`);
       } else {
         toast.success('Rendelését rögzítettük!');
+        router.push('/thank-you');
       }
-
-      // Redirect to thank you page
-      router.push('/thank-you');
     } catch (error) {
       console.error('Order submission error:', error);
       toast.error('Hiba történt a rendelés feldolgozása során. Kérjük, próbálja újra!');
