@@ -10,6 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { signOut, useSession } from "next-auth/react"
+import { Menu } from 'lucide-react';
+import { useState } from 'react';
 
 const navigation = [
   { name: 'Termékek', href: '/products' },
@@ -21,6 +23,7 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -42,7 +45,16 @@ export function Navbar() {
             MOVAGA
           </Link>
 
-          <div className="flex space-x-6">
+          {/* Mobil menü gomb */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden text-white hover:text-primary"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+
+          {/* Asztali navigáció */}
+          <div className="hidden md:flex space-x-6">
             {navigation.map((item) => (
               <Link
                 key={item.href}
@@ -70,7 +82,7 @@ export function Navbar() {
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
                     {session.user.name?.[0] || 'U'}
                   </span>
-                  <span className="px-2 text-sm font-medium">{session.user.name || 'Felhasználó'}</span>
+                  <span className="hidden sm:block px-2 text-sm font-medium">{session.user.name || 'Felhasználó'}</span>
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -95,23 +107,35 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="flex items-center space-x-4">
-              <Link 
-                href="/auth/login"
-                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                Bejelentkezés
-              </Link>
-              <Link 
-                href="/auth/register"
-                className="rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
-              >
-                Regisztráció
-              </Link>
-            </div>
+            <Link
+              href="/auth/signin"
+              className="text-sm font-medium text-white hover:text-primary transition-colors"
+            >
+              Bejelentkezés
+            </Link>
           )}
         </div>
       </div>
+
+      {/* Mobil menü */}
+      {isMenuOpen && (
+        <div className="md:hidden bg-black border-t border-gray-700 px-4 py-2">
+          {navigation.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`block py-2 text-sm font-medium transition-colors ${
+                pathname === item.href
+                  ? 'text-primary'
+                  : 'text-white hover:text-primary'
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              {item.name}
+            </Link>
+          ))}
+        </div>
+      )}
     </nav>
   );
 } 

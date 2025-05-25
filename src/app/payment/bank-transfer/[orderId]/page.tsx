@@ -102,24 +102,24 @@ export default function BankTransferPage({
             </p>
           </div>
 
-          <div className="space-y-4 rounded-lg bg-blue-50 p-6">
-            <div className="flex justify-between">
+          <div className="space-y-4 rounded-lg bg-blue-50 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between space-y-2 sm:space-y-0">
               <span className="font-medium text-blue-900">Kedvezményezett:</span>
-              <span className="text-blue-900">Just Clear Solution Kft.</span>
+              <span className="text-blue-900 break-all sm:text-right">Just Clear Solution Kft.</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex flex-col sm:flex-row sm:justify-between space-y-2 sm:space-y-0">
               <span className="font-medium text-blue-900">Bankszámlaszám:</span>
-              <span className="text-blue-900">11715007-21533495</span>
+              <span className="text-blue-900 break-all sm:text-right">11715007-21533495</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex flex-col sm:flex-row sm:justify-between space-y-2 sm:space-y-0">
               <span className="font-medium text-blue-900">Összeg:</span>
-              <span className="text-blue-900">{formatPrice(order.total)}</span>
+              <span className="text-blue-900 break-all sm:text-right">{formatPrice(order.total)}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex flex-col sm:flex-row sm:justify-between space-y-2 sm:space-y-0">
               <span className="font-medium text-blue-900">Közlemény:</span>
-              <span className="text-blue-900">{order.id}</span>
+              <span className="text-blue-900 break-all sm:text-right">{order.id}</span>
             </div>
-            <p className="mt-4 text-sm text-blue-800">
+            <p className="mt-4 text-sm text-blue-800 text-center sm:text-left">
               Kérjük, a közlemény rovatban mindenképp tüntesse fel a rendelés azonosítót!
             </p>
           </div>

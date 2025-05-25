@@ -351,7 +351,7 @@ export default function CheckoutPage() {
           <div className="space-y-6">
             {/* Cím adatok űrlap */}
             {step === 'address' && (
-              <div className="rounded-lg border border-border bg-background p-6 text-foreground">
+              <div className="rounded-lg border border-border bg-background p-4 sm:p-6 text-foreground">
                 <h2 className="mb-4 text-lg font-semibold">Címadatok</h2>
                 
                 <form onSubmit={handleSubmit(handleAddressSubmit)} className="space-y-6">
@@ -364,59 +364,59 @@ export default function CheckoutPage() {
                         <input
                           type="text"
                           {...register('shippingFullName', { required: 'A név megadása kötelező' })}
-                          className="w-full px-3 py-2 border rounded-md"
+                          className="w-full px-3 py-2 border rounded-md text-sm"
                         />
                         {errors.shippingFullName && (
                           <p className="text-red-500 text-sm mt-1">{errors.shippingFullName.message}</p>
                         )}
                       </div>
                       
-                      <div>
+                      <div className="col-span-1">
                         <label className="block text-sm font-medium mb-1">Ország*</label>
                         <input
                           type="text"
                           {...register('shippingCountry', { required: 'Az ország megadása kötelező' })}
-                          className="w-full px-3 py-2 border rounded-md"
+                          className="w-full px-3 py-2 border rounded-md text-sm"
                         />
                         {errors.shippingCountry && (
                           <p className="text-red-500 text-sm mt-1">{errors.shippingCountry.message}</p>
                         )}
                       </div>
                       
-                      <div>
+                      <div className="col-span-1">
                         <label className="block text-sm font-medium mb-1">Irányítószám*</label>
                         <input
                           type="text"
                           {...register('shippingZipCode', { required: 'Az irányítószám megadása kötelező' })}
-                          className="w-full px-3 py-2 border rounded-md"
+                          className="w-full px-3 py-2 border rounded-md text-sm"
                         />
                         {errors.shippingZipCode && (
                           <p className="text-red-500 text-sm mt-1">{errors.shippingZipCode.message}</p>
                         )}
                       </div>
                       
-                      <div>
+                      <div className="col-span-1">
                         <label className="block text-sm font-medium mb-1">Város*</label>
                         <input
                           type="text"
                           {...register('shippingCity', { required: 'A város megadása kötelező' })}
-                          className="w-full px-3 py-2 border rounded-md"
+                          className="w-full px-3 py-2 border rounded-md text-sm"
                         />
                         {errors.shippingCity && (
                           <p className="text-red-500 text-sm mt-1">{errors.shippingCity.message}</p>
                         )}
                       </div>
                       
-                      <div>
+                      <div className="col-span-1">
                         <label className="block text-sm font-medium mb-1">Telefonszám</label>
                         <input
                           type="text"
                           {...register('shippingPhone')}
-                          className="w-full px-3 py-2 border rounded-md"
+                          className="w-full px-3 py-2 border rounded-md text-sm"
                         />
                       </div>
                       
-                      <div>
+                      <div className="sm:col-span-2">
                         <label className="block text-sm font-medium mb-1">Email cím*</label>
                         <input
                           type="email"
@@ -427,7 +427,7 @@ export default function CheckoutPage() {
                               message: 'Érvénytelen email cím formátum'
                             }
                           })}
-                          className="w-full px-3 py-2 border rounded-md"
+                          className="w-full px-3 py-2 border rounded-md text-sm"
                         />
                         {errors.shippingEmail && (
                           <p className="text-red-500 text-sm mt-1">{errors.shippingEmail.message}</p>
@@ -439,7 +439,7 @@ export default function CheckoutPage() {
                         <input
                           type="text"
                           {...register('shippingAddress', { required: 'A cím megadása kötelező' })}
-                          className="w-full px-3 py-2 border rounded-md"
+                          className="w-full px-3 py-2 border rounded-md text-sm"
                         />
                         {errors.shippingAddress && (
                           <p className="text-red-500 text-sm mt-1">{errors.shippingAddress.message}</p>
@@ -450,8 +450,8 @@ export default function CheckoutPage() {
                   
                   {/* Számlázási cím */}
                   <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-md font-semibold">Számlázási cím</h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3">
+                      <h3 className="text-md font-semibold mb-2 sm:mb-0">Számlázási cím</h3>
                       <label className="flex items-center">
                         <input
                           type="checkbox"
@@ -472,7 +472,7 @@ export default function CheckoutPage() {
                             {...register('billingFullName', { 
                               required: !sameAsShipping ? 'A név megadása kötelező' : false 
                             })}
-                            className="w-full px-3 py-2 border rounded-md"
+                            className="w-full px-3 py-2 border rounded-md text-sm"
                           />
                           {errors.billingFullName && (
                             <p className="text-red-500 text-sm mt-1">{errors.billingFullName.message}</p>
@@ -486,7 +486,7 @@ export default function CheckoutPage() {
                             {...register('billingCountry', { 
                               required: !sameAsShipping ? 'Az ország megadása kötelező' : false 
                             })}
-                            className="w-full px-3 py-2 border rounded-md"
+                            className="w-full px-3 py-2 border rounded-md text-sm"
                           />
                           {errors.billingCountry && (
                             <p className="text-red-500 text-sm mt-1">{errors.billingCountry.message}</p>
@@ -500,7 +500,7 @@ export default function CheckoutPage() {
                             {...register('billingZipCode', { 
                               required: !sameAsShipping ? 'Az irányítószám megadása kötelező' : false 
                             })}
-                            className="w-full px-3 py-2 border rounded-md"
+                            className="w-full px-3 py-2 border rounded-md text-sm"
                           />
                           {errors.billingZipCode && (
                             <p className="text-red-500 text-sm mt-1">{errors.billingZipCode.message}</p>
@@ -514,7 +514,7 @@ export default function CheckoutPage() {
                             {...register('billingCity', { 
                               required: !sameAsShipping ? 'A város megadása kötelező' : false 
                             })}
-                            className="w-full px-3 py-2 border rounded-md"
+                            className="w-full px-3 py-2 border rounded-md text-sm"
                           />
                           {errors.billingCity && (
                             <p className="text-red-500 text-sm mt-1">{errors.billingCity.message}</p>
@@ -526,7 +526,7 @@ export default function CheckoutPage() {
                           <input
                             type="text"
                             {...register('billingPhone')}
-                            className="w-full px-3 py-2 border rounded-md"
+                            className="w-full px-3 py-2 border rounded-md text-sm"
                           />
                         </div>
                         
@@ -537,7 +537,7 @@ export default function CheckoutPage() {
                             {...register('billingAddress', { 
                               required: !sameAsShipping ? 'A cím megadása kötelező' : false 
                             })}
-                            className="w-full px-3 py-2 border rounded-md"
+                            className="w-full px-3 py-2 border rounded-md text-sm"
                           />
                           {errors.billingAddress && (
                             <p className="text-red-500 text-sm mt-1">{errors.billingAddress.message}</p>
@@ -567,7 +567,7 @@ export default function CheckoutPage() {
                               {...register('billingCompanyName', { 
                                 required: isCompany ? 'A cégnév megadása kötelező' : false 
                               })}
-                              className="w-full px-3 py-2 border rounded-md"
+                              className="w-full px-3 py-2 border rounded-md text-sm"
                             />
                             {errors.billingCompanyName && (
                               <p className="text-red-500 text-sm mt-1">{errors.billingCompanyName.message}</p>
@@ -581,7 +581,7 @@ export default function CheckoutPage() {
                               {...register('billingTaxNumber', { 
                                 required: isCompany ? 'Az adószám megadása kötelező' : false 
                               })}
-                              className="w-full px-3 py-2 border rounded-md"
+                              className="w-full px-3 py-2 border rounded-md text-sm"
                             />
                             {errors.billingTaxNumber && (
                               <p className="text-red-500 text-sm mt-1">{errors.billingTaxNumber.message}</p>
@@ -595,7 +595,7 @@ export default function CheckoutPage() {
                   <div className="mt-6 flex justify-end">
                     <button 
                       type="submit" 
-                      className="rounded-lg bg-primary px-8 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                      className="w-full sm:w-auto rounded-lg bg-primary px-8 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                     >
                       Tovább a szállítási módokhoz
                     </button>
@@ -606,11 +606,11 @@ export default function CheckoutPage() {
           
             {/* Szállítási módok */}
             {step === 'shipping' && (
-              <div className="rounded-lg border border-border bg-background p-6 text-foreground">
+              <div className="rounded-lg border border-border bg-background p-4 sm:p-6 text-foreground">
                 <h2 className="mb-4 text-lg font-semibold">Szállítási mód</h2>
                 <div className="space-y-4">
                   {shippingMethods.map((method) => (
-                    <label key={method.id} className="flex items-center space-x-3">
+                    <label key={method.id} className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
                       <input
                         type="radio"
                         name="shipping"
@@ -625,16 +625,16 @@ export default function CheckoutPage() {
                   ))}
                 </div>
                 
-                <div className="mt-6 flex justify-between">
+                <div className="mt-6 flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0">
                   <button
                     onClick={() => setStep('address')}
-                    className="rounded-lg border border-primary px-8 py-3 font-medium text-black transition-colors hover:bg-gray-100"
+                    className="w-full sm:w-auto rounded-lg border border-primary px-8 py-3 font-medium text-black transition-colors hover:bg-gray-100 order-2 sm:order-1"
                   >
                     Vissza
                   </button>
                   <button
                     onClick={() => setStep('payment')}
-                    className="rounded-lg bg-primary px-8 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                    className="w-full sm:w-auto rounded-lg bg-primary px-8 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90 order-1 sm:order-2"
                   >
                     Tovább a fizetési módokhoz
                   </button>
@@ -644,11 +644,11 @@ export default function CheckoutPage() {
 
             {/* Fizetési módok */}
             {step === 'payment' && (
-              <div className="rounded-lg border border-border bg-background p-6 text-foreground">
+              <div className="rounded-lg border border-border bg-background p-4 sm:p-6 text-foreground">
                 <h2 className="mb-4 text-lg font-semibold">Fizetési mód</h2>
                 <div className="space-y-4">
                   {Object.entries(PAYMENT_METHODS).map(([key, method]) => (
-                    <label key={key} className="flex items-center space-x-3">
+                    <label key={key} className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
                       <input
                         type="radio"
                         name="payment"
@@ -657,15 +657,20 @@ export default function CheckoutPage() {
                         onChange={(e) => setPaymentMethod(e.target.value as keyof typeof PAYMENT_METHODS)}
                         className="h-4 w-4 border-border text-primary focus:ring-primary focus:ring-offset-2"
                       />
-                      <span>{method.name}</span>
+                      <span className="flex-1">{method.name}</span>
+                      {method.fee > 0 && (
+                        <span className="font-medium text-sm text-gray-600">
+                          +{formatPrice(method.fee)} kezelési költség
+                        </span>
+                      )}
                     </label>
                   ))}
                 </div>
                 
-                <div className="mt-6 flex justify-between">
+                <div className="mt-6 flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0">
                   <button
                     onClick={() => setStep('shipping')}
-                    className="rounded-lg border border-primary px-8 py-3 font-medium text-black transition-colors hover:bg-gray-100"
+                    className="w-full sm:w-auto rounded-lg border border-primary px-8 py-3 font-medium text-black transition-colors hover:bg-gray-100 order-2 sm:order-1"
                   >
                     Vissza
                   </button>
@@ -676,7 +681,7 @@ export default function CheckoutPage() {
         </div>
 
         <div className="lg:col-span-4">
-          <div className="rounded-lg border border-border bg-background p-6 text-foreground">
+          <div className="rounded-lg border border-border bg-background p-4 sm:p-6 text-foreground sticky top-4">
             <h2 className="mb-4 text-lg font-semibold bg-white inline-block px-3 py-1 rounded text-black">Rendelés összegzése</h2>
             
             <div className="space-y-4">
@@ -690,9 +695,18 @@ export default function CheckoutPage() {
                 <span>{formatPrice(shippingCost)}</span>
               </div>
 
+              {PAYMENT_METHODS[paymentMethod].fee > 0 && (
+                <div className="flex justify-between">
+                  <span>Kezelési költség:</span>
+                  <span>{formatPrice(PAYMENT_METHODS[paymentMethod].fee)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between border-t pt-4 font-bold">
                 <span className="bg-white px-3 py-1 rounded text-black">Végösszeg:</span>
-                <span className="bg-white px-3 py-1 rounded text-black">{formatPrice(total)}</span>
+                <span className="bg-white px-3 py-1 rounded text-black">
+                  {formatPrice(total + (PAYMENT_METHODS[paymentMethod].fee || 0))}
+                </span>
               </div>
 
               {step === 'payment' && (
