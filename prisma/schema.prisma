@@ -28,8 +28,10 @@ model User {
   shippingAddress ShippingAddress?
   referrer        User?            @relation("UserReferrals", fields: [referrerId], references: [id])
   referrals       User[]           @relation("UserReferrals")
+  commissions     Commission[]
 
   @@map("users")
+  @@index([referrerId])
 }
 
 model ShippingAddress {
@@ -195,6 +197,18 @@ model EmailTemplate {
   isActive     Boolean     @default(true)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+}
+
+model Commission {
+  id          String   @id @default(cuid())
+  amount      Float
+  type        String   // 'personal' | 'network'
+  description String
+  createdAt   DateTime @default(now())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 enum OrderStatus {
