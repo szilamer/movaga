@@ -133,6 +133,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 setFormData({ ...formData, email: e.target.value })
               }
               placeholder="pelda@email.com"
+              className="text-foreground bg-background"
             />
           </div>
 
@@ -149,6 +150,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 setFormData({ ...formData, password: e.target.value })
               }
               placeholder="********"
+              className="text-foreground bg-background"
             />
           </div>
 

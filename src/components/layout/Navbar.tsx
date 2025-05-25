@@ -107,12 +107,20 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link
-              href="/auth/signin"
-              className="text-sm font-medium text-white hover:text-primary transition-colors"
-            >
-              Bejelentkezés
-            </Link>
+            <div className="flex items-center space-x-4">
+              <Link
+                href="/auth/login"
+                className="text-sm font-medium text-white hover:text-primary transition-colors"
+              >
+                Bejelentkezés
+              </Link>
+              <Link
+                href="/auth/register"
+                className="text-sm font-medium px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              >
+                Regisztráció
+              </Link>
+            </div>
           )}
         </div>
       </div>
