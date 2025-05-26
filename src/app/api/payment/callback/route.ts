@@ -49,11 +49,13 @@ export async function POST(request: Request) {
     }
 
     // Initialize Barion service with your POS key
-    const posKey = process.env.BARION_POS_KEY || 'fab5fa17-77a6-4cf6-a5ae-a5cb81e264d8';
+    const posKey = process.env.BARION_POS_KEY || process.env.NEXT_PUBLIC_BARION_POS_KEY || 'fab5fa17-77a6-4cf6-a5ae-a5cb81e264d8';
     console.log(`${logPrefix} Using POS key:`, posKey);
     logToFile(`Using POS key: ${posKey}`);
     
-    const barionService = new BarionService(posKey);
+    // Use production mode if we're not using the test key
+    const isTestMode = posKey === 'fab5fa17-77a6-4cf6-a5ae-a5cb81e264d8';
+    const barionService = new BarionService(posKey, isTestMode);
 
     // Get payment state
     console.log(`${logPrefix} Getting payment state from Barion for PaymentId:`, PaymentId);

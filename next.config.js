@@ -45,8 +45,8 @@ const nextConfig = {
     NEXT_PUBLIC_URL: process.env.NODE_ENV === 'production' 
       ? 'https://movaga.hu' 
       : 'http://localhost:3000',
-    BARION_POS_KEY: 'fab5fa17-77a6-4cf6-a5ae-a5cb81e264d8',
-    NEXT_PUBLIC_BARION_POS_KEY: 'fab5fa17-77a6-4cf6-a5ae-a5cb81e264d8'
+    BARION_POS_KEY: process.env.BARION_POS_KEY || 'fab5fa17-77a6-4cf6-a5ae-a5cb81e264d8',
+    NEXT_PUBLIC_BARION_POS_KEY: process.env.NEXT_PUBLIC_BARION_POS_KEY || 'fab5fa17-77a6-4cf6-a5ae-a5cb81e264d8'
   },
   typescript: {
     ignoreBuildErrors: true,

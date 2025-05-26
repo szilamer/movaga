@@ -52,4 +52,30 @@ export async function GET(
       { status: 500 }
     );
   }
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: { orderId: string } }
+) {
+  try {
+    const { orderId } = params;
+    const body = await request.json();
+
+    // Update order with the provided data
+    const order = await prisma.order.update({
+      where: {
+        id: orderId,
+      },
+      data: body,
+    });
+
+    return NextResponse.json(order);
+  } catch (error) {
+    console.error('[ORDER_PATCH]', error);
+    return NextResponse.json(
+      { error: 'Hiba történt a rendelés frissítése során' },
+      { status: 500 }
+    );
+  }
 } 

@@ -12,7 +12,7 @@ import { BarionService, BarionPaymentRequest } from '@/lib/barion'
 import Link from 'next/link'
 
 const PAYMENT_METHODS = {
-  // BARION: { name: 'Barion online fizetés', fee: 0 }, // Temporarily disabled until token is available
+  BARION: { name: 'Barion online fizetés', fee: 0 },
   CASH_ON_DELIVERY: { name: 'Készpénzes fizetés', fee: 500 },
   BANK_TRANSFER: { name: 'Banki átutalás', fee: 0 },
 } as const
@@ -253,6 +253,95 @@ export default function CheckoutPage() {
     }
   }
 
+  const handleBarionPayment = async (order: any, formData: AddressFormValues, total: number) => {
+    try {
+      // Initialize Barion service with production mode
+      const posKey = process.env.NEXT_PUBLIC_BARION_POS_KEY;
+      if (!posKey) {
+        throw new Error('Barion POS kulcs nem található');
+      }
+
+      const barionService = new BarionService(posKey, false); // false = production mode
+
+      const paymentRequest: BarionPaymentRequest = {
+        POSKey: posKey,
+        PaymentType: 'Immediate',
+        ReservationPeriod: '00:01:00',
+        DelayedCapturePeriod: '00:01:00',
+        PaymentWindow: '00:30:00',
+        GuestCheckOut: true,
+        InitiateRecurrence: false,
+        RecurrenceType: '',
+        RecurrenceId: '',
+        FundingSources: ['All'],
+        PaymentRequestId: order.id,
+        PayerHint: formData.shippingEmail,
+        CardHolderNameHint: formData.billingFullName || formData.shippingFullName,
+        Items: items.map(item => ({
+          Name: item.name,
+          Description: item.description || item.name,
+          Quantity: item.quantity,
+          Unit: 'db',
+          UnitPrice: item.price,
+          ItemTotal: item.price * item.quantity,
+          SKU: item.id,
+        })),
+        ShippingAddress: {
+          Country: formData.shippingCountry,
+          City: formData.shippingCity,
+          Zip: formData.shippingZipCode,
+          Street: formData.shippingAddress,
+          FullName: formData.shippingFullName,
+        },
+        BillingAddress: {
+          Country: formData.sameAsShipping ? formData.shippingCountry : formData.billingCountry,
+          City: formData.sameAsShipping ? formData.shippingCity : formData.billingCity,
+          Zip: formData.sameAsShipping ? formData.shippingZipCode : formData.billingZipCode,
+          Street: formData.sameAsShipping ? formData.shippingAddress : formData.billingAddress,
+          FullName: formData.sameAsShipping ? formData.shippingFullName : formData.billingFullName,
+        },
+        RedirectUrl: `${window.location.origin}/payment/success?orderId=${order.id}`,
+        CallbackUrl: `${window.location.origin}/api/payment/callback`,
+        Currency: 'HUF',
+        Transactions: [
+          {
+            POSTransactionId: `TRANS-${order.id}`,
+            Payee: 'szilamer@gmail.com', // Update this to your Barion registered email
+            Total: total,
+            Comment: `Rendelés: ${order.id}`,
+            Items: items.map(item => ({
+              Name: item.name,
+              Description: item.description || item.name,
+              Quantity: item.quantity,
+              Unit: 'db',
+              UnitPrice: item.price,
+              ItemTotal: item.price * item.quantity,
+              SKU: item.id,
+            })),
+          },
+        ],
+      };
+
+      // Update order with Barion payment ID
+      await fetch(`/api/orders/${order.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          barionPaymentId: order.id,
+        }),
+      });
+
+      const paymentUrl = await barionService.startPayment(paymentRequest);
+      toast.success('Átirányítás a Barion fizetési oldalra...');
+      window.location.href = paymentUrl;
+    } catch (error) {
+      console.error('Barion payment error:', error);
+      toast.error('Hiba történt a Barion fizetés indításakor. Kérjük, próbálja újra!');
+    }
+  };
+
   const handleSubmitOrder = async () => {
     if (!selectedShippingMethod?.id) {
       toast.error('Kérjük, válassz szállítási módot a rendelés leadásához!');
@@ -319,6 +408,9 @@ export default function CheckoutPage() {
       if (paymentMethod === 'BANK_TRANSFER') {
         toast.success(`Rendelését rögzítettük! Rendelés azonosító: ${order.id}`);
         router.push(`/payment/bank-transfer/${order.id}`);
+      } else if (paymentMethod === 'BARION') {
+        // Redirect to Barion payment
+        await handleBarionPayment(order, formData, totalWithFees);
       } else {
         toast.success('Rendelését rögzítettük!');
         router.push('/thank-you');

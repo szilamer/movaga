@@ -165,7 +165,7 @@ export class BarionService {
 
   async getPaymentState(paymentId: string): Promise<BarionResponse> {
     try {
-      const response = await axios.get<BarionResponse>(`${BARION_API_BASE}/Payment/GetPaymentState`, {
+      const response = await axios.get<BarionResponse>(`${this.getApiBase()}/Payment/GetPaymentState`, {
         params: {
           POSKey: this.posKey,
           PaymentId: paymentId,
@@ -181,7 +181,7 @@ export class BarionService {
 
   async finishReservation(paymentId: string, amount: number): Promise<BarionResponse> {
     try {
-      const response = await axios.post<BarionResponse>(`${BARION_API_BASE}/Payment/FinishReservation`, {
+      const response = await axios.post<BarionResponse>(`${this.getApiBase()}/Payment/FinishReservation`, {
         POSKey: this.posKey,
         PaymentId: paymentId,
         Amount: amount,
@@ -196,7 +196,7 @@ export class BarionService {
 
   async cancelPayment(paymentId: string): Promise<BarionResponse> {
     try {
-      const response = await axios.post<BarionResponse>(`${BARION_API_BASE}/Payment/Cancel`, {
+      const response = await axios.post<BarionResponse>(`${this.getApiBase()}/Payment/Cancel`, {
         POSKey: this.posKey,
         PaymentId: paymentId,
       });
