@@ -147,4 +147,29 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Legal documents specific styles to override global white text */
+.legal-document {
+  color: #1f2937 !important; /* gray-800 */
+}
+
+.legal-document h1,
+.legal-document h2,
+.legal-document h3,
+.legal-document h4,
+.legal-document h5,
+.legal-document h6 {
+  color: #111827 !important; /* gray-900 */
+}
+
+.legal-document p,
+.legal-document li,
+.legal-document div {
+  color: #374151 !important; /* gray-700 */
+}
+
+.legal-document strong,
+.legal-document b {
+  color: #111827 !important; /* gray-900 */
 } 
