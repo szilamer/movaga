@@ -150,7 +150,12 @@
 }
 
 /* Legal documents specific styles to override global white text */
-.legal-document {
+.legal-document,
+.legal-document *,
+.legal-document > *,
+.legal-document div,
+.legal-document span,
+.legal-document p {
   color: #1f2937 !important; /* gray-800 */
 }
 
@@ -161,15 +166,35 @@
 .legal-document h5,
 .legal-document h6 {
   color: #111827 !important; /* gray-900 */
+  font-weight: 600 !important;
 }
 
 .legal-document p,
 .legal-document li,
-.legal-document div {
+.legal-document div,
+.legal-document ul,
+.legal-document ol {
   color: #374151 !important; /* gray-700 */
 }
 
 .legal-document strong,
 .legal-document b {
   color: #111827 !important; /* gray-900 */
+  font-weight: 700 !important;
+}
+
+/* Extra specificity for ReactMarkdown generated content */
+.legal-document .prose,
+.legal-document .prose *,
+.legal-document .prose > * {
+  color: #374151 !important;
+}
+
+.legal-document .prose h1,
+.legal-document .prose h2,
+.legal-document .prose h3,
+.legal-document .prose h4,
+.legal-document .prose h5,
+.legal-document .prose h6 {
+  color: #111827 !important;
 } 

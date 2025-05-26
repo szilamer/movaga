@@ -25,8 +25,26 @@ export default async function AdatvedelemPage() {
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
-          <div className="prose prose-lg max-w-none legal-document">
-            <ReactMarkdown>{content}</ReactMarkdown>
+          <div 
+            className="prose prose-lg max-w-none legal-document" 
+            style={{ color: '#374151' }}
+          >
+            <ReactMarkdown 
+              components={{
+                h1: ({children}) => <h1 style={{color: '#111827', fontWeight: '600'}}>{children}</h1>,
+                h2: ({children}) => <h2 style={{color: '#111827', fontWeight: '600'}}>{children}</h2>,
+                h3: ({children}) => <h3 style={{color: '#111827', fontWeight: '600'}}>{children}</h3>,
+                h4: ({children}) => <h4 style={{color: '#111827', fontWeight: '600'}}>{children}</h4>,
+                h5: ({children}) => <h5 style={{color: '#111827', fontWeight: '600'}}>{children}</h5>,
+                h6: ({children}) => <h6 style={{color: '#111827', fontWeight: '600'}}>{children}</h6>,
+                p: ({children}) => <p style={{color: '#374151'}}>{children}</p>,
+                li: ({children}) => <li style={{color: '#374151'}}>{children}</li>,
+                strong: ({children}) => <strong style={{color: '#111827', fontWeight: '700'}}>{children}</strong>,
+                b: ({children}) => <b style={{color: '#111827', fontWeight: '700'}}>{children}</b>,
+              }}
+            >
+              {content}
+            </ReactMarkdown>
           </div>
           
           <div className="mt-8 pt-6 border-t border-gray-200">
