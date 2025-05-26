@@ -22,6 +22,8 @@ interface HomepageSettings {
   businessPartnersContent: string;
   useHtmlForAboutUs: boolean;
   useHtmlForBusinessPartners: boolean;
+  privacyPolicy?: string;
+  termsOfService?: string;
 }
 
 interface HomepageEditorProps {
@@ -61,6 +63,31 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
       }));
     }
   }, [initialSettings]);
+
+  // Load legal documents on component mount
+  useEffect(() => {
+    const loadLegalDocuments = async () => {
+      try {
+        const [privacyResponse, termsResponse] = await Promise.all([
+          fetch('/uploads/homepage/adatvedelem.md'),
+          fetch('/uploads/homepage/aszf.md')
+        ]);
+
+        const privacyContent = privacyResponse.ok ? await privacyResponse.text() : '';
+        const termsContent = termsResponse.ok ? await termsResponse.text() : '';
+
+        setSettings(prev => ({
+          ...prev,
+          privacyPolicy: privacyContent,
+          termsOfService: termsContent
+        }));
+      } catch (error) {
+        console.error('Error loading legal documents:', error);
+      }
+    };
+
+    loadLegalDocuments();
+  }, []);
 
   const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -119,12 +146,30 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
     console.log('Settings to save:', settings);
     try {
       const baseUrl = window.location.origin;
+      
+      // Save homepage settings
       const response = await fetch(`${baseUrl}/api/admin/homepage/content`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
       });
       if (!response.ok) throw new Error('Hiba a mentés során');
+
+      // Save legal documents if they exist
+      if (settings.privacyPolicy || settings.termsOfService) {
+        const legalResponse = await fetch(`${baseUrl}/api/admin/legal-documents`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            privacyPolicy: settings.privacyPolicy,
+            termsOfService: settings.termsOfService
+          }),
+        });
+        if (!legalResponse.ok) {
+          console.warn('Legal documents save failed, but homepage settings saved successfully');
+        }
+      }
+
       toast.success('Tartalom sikeresen mentve!');
     } catch (error) {
       console.error('Error saving content:', error);
@@ -142,6 +187,7 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
           <TabsTrigger value="hero">Hero szekció</TabsTrigger>
           <TabsTrigger value="aboutUs">Rólunk szekció</TabsTrigger>
           <TabsTrigger value="businessPartners">Üzleti partnerek szekció</TabsTrigger>
+          <TabsTrigger value="legal">Jogi dokumentumok</TabsTrigger>
           <TabsTrigger value="preview">Előnézet</TabsTrigger>
         </TabsList>
         
@@ -446,6 +492,62 @@ export function HomepageEditor({ initialSettings }: HomepageEditorProps) {
                 {saving ? 'Mentés...' : 'Mentés'}
               </button>
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="legal" className="space-y-8">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <div className="rounded-lg border bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-xl font-semibold">Adatvédelmi szabályzat</h2>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="privacyPolicy" className="block mb-2 text-sm font-medium text-gray-700">
+                    Adatvédelmi szabályzat tartalma (Markdown formátum)
+                  </label>
+                  <textarea
+                    id="privacyPolicy"
+                    className="w-full p-2 border border-gray-300 rounded-md min-h-[400px] font-mono text-sm"
+                    value={settings.privacyPolicy || ''}
+                    onChange={(e) => handleTextChange(e, 'privacyPolicy')}
+                    placeholder="Adatvédelmi szabályzat tartalma..."
+                  />
+                </div>
+                <p className="text-sm text-gray-500">
+                  Ez a tartalom jelenik meg az adatvédelem linkre kattintva. Markdown formátumot használhat.
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-lg border bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-xl font-semibold">Általános Szerződési Feltételek (ÁSZF)</h2>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="termsOfService" className="block mb-2 text-sm font-medium text-gray-700">
+                    ÁSZF tartalma (Markdown formátum)
+                  </label>
+                  <textarea
+                    id="termsOfService"
+                    className="w-full p-2 border border-gray-300 rounded-md min-h-[400px] font-mono text-sm"
+                    value={settings.termsOfService || ''}
+                    onChange={(e) => handleTextChange(e, 'termsOfService')}
+                    placeholder="ÁSZF tartalma..."
+                  />
+                </div>
+                <p className="text-sm text-gray-500">
+                  Ez a tartalom jelenik meg az ÁSZF linkre kattintva. Markdown formátumot használhat.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-center">
+            <button
+              className="px-6 py-3 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50"
+              onClick={saveContent}
+              disabled={saving}
+            >
+              {saving ? 'Mentés...' : 'Jogi dokumentumok mentése'}
+            </button>
           </div>
         </TabsContent>
 
