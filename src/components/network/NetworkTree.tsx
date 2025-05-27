@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, memo } from 'react';
 import ReactFlow, {
   Node,
   Edge,
@@ -26,7 +26,7 @@ interface NetworkTreeProps {
   data: NetworkMember[];
 }
 
-const NetworkTree: React.FC<NetworkTreeProps> = ({ data }) => {
+const NetworkTree: React.FC<NetworkTreeProps> = memo(({ data }) => {
   // Rekurzív függvény a csomópontok és élek létrehozásához
   const createNodesAndEdges = useCallback((
     members: NetworkMember[],
@@ -50,7 +50,7 @@ const NetworkTree: React.FC<NetworkTreeProps> = ({ data }) => {
         position: { x, y },
         data: {
           label: (
-            <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-200">
+            <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-200 min-w-[200px]">
               <div className="font-semibold text-gray-800">{member.name || 'Névtelen'}</div>
               <div className="text-sm text-gray-600">{member.email}</div>
               <div className="text-sm text-gray-600">
@@ -59,6 +59,11 @@ const NetworkTree: React.FC<NetworkTreeProps> = ({ data }) => {
               <div className="text-xs text-gray-500">
                 Csatlakozott: {new Date(member.joinedAt).toLocaleDateString('hu-HU')}
               </div>
+              {member.referralCount > 0 && (
+                <div className="text-xs text-blue-600 mt-1">
+                  Referáltak: {member.referralCount} fő
+                </div>
+              )}
             </div>
           ),
         },
@@ -97,6 +102,13 @@ const NetworkTree: React.FC<NetworkTreeProps> = ({ data }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialElements.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialElements.edges);
 
+  // Frissítjük a csomópontokat és éleket, amikor az adatok változnak
+  useEffect(() => {
+    const newElements = createNodesAndEdges(data);
+    setNodes(newElements.nodes);
+    setEdges(newElements.edges);
+  }, [data, createNodesAndEdges, setNodes, setEdges]);
+
   return (
     <div style={{ width: '100%', height: '80vh' }}>
       <ReactFlow
@@ -105,12 +117,21 @@ const NetworkTree: React.FC<NetworkTreeProps> = ({ data }) => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         fitView
+        fitViewOptions={{
+          padding: 0.2,
+          includeHiddenNodes: false,
+        }}
+        minZoom={0.1}
+        maxZoom={2}
+        defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
       >
         <Background />
         <Controls />
       </ReactFlow>
     </div>
   );
-};
+});
+
+NetworkTree.displayName = 'NetworkTree';
 
 export default NetworkTree; 

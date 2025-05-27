@@ -1,7 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import SalesChart from '@/components/dashboard/SalesChart'
@@ -43,6 +43,7 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
   // Rendelések kezelése a dashboardon
   interface OrderType {
@@ -88,31 +89,55 @@ export default function DashboardPage() {
     }
   }, [status, router])
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const response = await fetch('/api/users/stats')
-        if (!response.ok) {
-          throw new Error('Hiba történt az adatok lekérése közben')
-        }
-        const data = await response.json()
-        setDashboardData(data)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Ismeretlen hiba történt')
-      } finally {
-        setLoading(false)
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await fetch('/api/users/stats', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      })
+      if (!response.ok) {
+        throw new Error('Hiba történt az adatok lekérése közben')
       }
+      const data = await response.json()
+      setDashboardData(data)
+      setLastUpdated(new Date())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ismeretlen hiba történt')
+    } finally {
+      setLoading(false)
     }
+  }, [])
 
+  useEffect(() => {
     if (session) {
       fetchDashboardData()
     }
-  }, [session])
+  }, [session, fetchDashboardData])
+
+  // Automatikus frissítés 5 percenként
+  useEffect(() => {
+    if (!session) return
+
+    const interval = setInterval(() => {
+      fetchDashboardData()
+    }, 5 * 60 * 1000) // 5 perc
+
+    return () => clearInterval(interval)
+  }, [session, fetchDashboardData])
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await fetch('/api/users/orders')
+        const res = await fetch('/api/users/orders', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Hiba történt a rendelések lekérésekor')
         setOrders(data)
@@ -140,6 +165,10 @@ export default function DashboardPage() {
     }
   }
 
+  const handleRefresh = () => {
+    fetchDashboardData()
+  }
+
   if (status === 'loading' || loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -164,9 +193,37 @@ export default function DashboardPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="grid grid-cols-1 gap-8">
         <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-            Üdvözlünk a vezérlőpulton!
-          </h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Üdvözlünk a vezérlőpulton!
+            </h2>
+            <div className="flex items-center gap-4">
+              {lastUpdated && (
+                <span className="text-sm text-gray-500">
+                  Utolsó frissítés: {lastUpdated.toLocaleTimeString('hu-HU')}
+                </span>
+              )}
+              <button
+                onClick={handleRefresh}
+                disabled={loading}
+                className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent"></div>
+                    Frissítés...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Frissítés
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-primary p-6 rounded-lg">
               <h3 className="text-lg font-medium text-white">

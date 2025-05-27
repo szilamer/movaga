@@ -122,7 +122,7 @@ export async function GET() {
         description: i % 2 === 0 ? 'Személyes forgalom után' : 'Hálózati forgalom után'
       }));
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         monthlySales: totalSales._sum.total || 0,
         networkSize: allUsers.length,
         discountLevel: 100, // Admin kedvezmény
@@ -133,6 +133,14 @@ export async function GET() {
         totalNetworkSales: totalNetworkSales,
         totalCommission: (totalSales._sum.total || 0) * 0.06
       });
+
+      // Cache control headers hozzáadása a friss adatok biztosításához
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      response.headers.set('Surrogate-Control', 'no-store');
+
+      return response;
     }
 
     // Felhasználó adatainak lekérése
@@ -247,7 +255,7 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       monthlySales,
       networkSize: networkMembers.length,
       discountLevel,
@@ -259,6 +267,14 @@ export async function GET() {
       totalNetworkSales,
       totalCommission: commission
     });
+
+    // Cache control headers hozzáadása a friss adatok biztosításához
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    response.headers.set('Surrogate-Control', 'no-store');
+
+    return response;
   } catch (error) {
     console.error('Hiba történt a dashboard adatok lekérése közben:', error)
     return NextResponse.json(

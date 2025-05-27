@@ -283,17 +283,33 @@ export async function GET() {
       // Átadjuk a session-t is a getAdminAsRoot függvénynek
       const adminWithNetwork = await getAdminAsRoot(session.user.id, session);
       
-      return NextResponse.json({
+      const response = NextResponse.json({
         members: [adminWithNetwork],
       });
+
+      // Cache control headers hozzáadása a friss adatok biztosításához
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      response.headers.set('Surrogate-Control', 'no-store');
+
+      return response;
     }
 
     // Normál felhasználó esetén csak a saját hálózatát kérjük le
     const networkMembers = await getNetworkMembersRecursive(session.user.id);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       members: networkMembers,
     });
+
+    // Cache control headers hozzáadása a friss adatok biztosításához
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    response.headers.set('Surrogate-Control', 'no-store');
+
+    return response;
   } catch (error) {
     console.error('Hiba történt a hálózati tagok lekérése közben:', error)
     return NextResponse.json(
