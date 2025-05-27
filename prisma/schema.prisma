@@ -18,6 +18,7 @@ model User {
   monthlySales    Int              @default(0)
   discountPercent Int              @default(0)
   discountValidUntil DateTime?
+  totalPoints     Int              @default(0)  // Összes megszerzett jutalékpont
   referrerId      String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt

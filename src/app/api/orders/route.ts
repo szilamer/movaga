@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/authOptions'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { sendOrderStatusEmail } from '@/lib/email'
+import { calculateAndAddPoints } from '@/lib/points'
 
 type OrderWithItems = Prisma.OrderGetPayload<{
   include: {
@@ -199,6 +200,17 @@ export async function POST(req: Request) {
         console.log(`Order confirmation email sent to ${userEmail} for order ${order.id}`);
       } catch (error) {
         console.error('Failed to send order confirmation email:', error);
+      }
+    }
+
+    // Jutalékpontok számítása és hozzáadása (csak bejelentkezett felhasználóknak)
+    if (session?.user?.id) {
+      try {
+        await calculateAndAddPoints(order.id);
+        console.log(`Points calculated and added for order ${order.id}`);
+      } catch (error) {
+        console.error('Failed to calculate points for order:', error);
+        // Ne állítsuk le a rendelést, ha a pontszámítás hibás
       }
     }
 

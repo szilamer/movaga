@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import SalesChart from '@/components/dashboard/SalesChart'
 import NetworkStats from '@/components/dashboard/NetworkStats'
 import CommissionHistory from '@/components/dashboard/CommissionHistory'
+import PointsHistory from '@/components/dashboard/PointsHistory'
 import OrderDetails from '@/components/orders/OrderDetails'
 
 interface DashboardData {
@@ -180,7 +181,10 @@ export default function DashboardPage() {
                 Kedvezmény szint
               </h3>
               <p className="mt-2 text-3xl font-semibold text-green-600">
-                {dashboardData.discountLevel}%
+                {dashboardData.discountLevel === 100 ? '100%' : 
+                 dashboardData.discountLevel === 30 ? '2. szint (30%)' :
+                 dashboardData.discountLevel === 15 ? '1. szint (15%)' :
+                 'Nincs kedvezmény'}
               </p>
             </div>
             <div className="bg-purple-50 p-6 rounded-lg">
@@ -200,6 +204,9 @@ export default function DashboardPage() {
           </h3>
           <SalesChart data={dashboardData.salesHistory} />
         </div>
+
+        {/* Jutalékpontok szekció */}
+        <PointsHistory />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <NetworkStats
