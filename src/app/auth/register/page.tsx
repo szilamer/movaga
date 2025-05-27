@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -13,6 +14,14 @@ export default function RegisterPage() {
     referrerId: '', // Opcionális meghívókód
   })
   const [error, setError] = useState('')
+
+  // URL paraméterből meghívó kód beállítása
+  useEffect(() => {
+    const refParam = searchParams.get('ref')
+    if (refParam) {
+      setFormData(prev => ({ ...prev, referrerId: refParam }))
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
