@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { formatPrice } from '@/lib/utils';
 import { type Product } from '@/types';
 import { useDiscount } from '@/hooks/useDiscount';
+import { useSession } from 'next-auth/react';
 import { getAbsoluteImageUrl } from '@/utils/imageUtils';
 
 interface ProductCardProps {
@@ -12,13 +13,21 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { data: session } = useSession();
   const { getDiscountedPrice } = useDiscount();
-  const priceInfo = getDiscountedPrice(
+  
+  // Ha nincs bejelentkezve a felhasználó, csak a normál árat jelenítjük meg
+  const priceInfo = session ? getDiscountedPrice(
     product.price, 
     product.discountedPrice,
     product.discountLevel1Price,
     product.discountLevel2Price
-  );
+  ) : {
+    originalPrice: product.price,
+    productDiscountedPrice: product.discountedPrice && product.discountedPrice < product.price ? product.discountedPrice : null,
+    finalPrice: product.discountedPrice && product.discountedPrice < product.price ? product.discountedPrice : product.price,
+    hasDiscount: product.discountedPrice && product.discountedPrice < product.price
+  };
   
   // Use the first image or a default if no images are available
   const imageUrl = product.images && product.images.length > 0 
@@ -67,7 +76,8 @@ export function ProductCard({ product }: ProductCardProps) {
               </span>
             )}
             
-            {(product.discountLevel1Price || product.discountLevel2Price) && (
+            {/* Kedvezményes árszinteket csak bejelentkezett felhasználóknak jelenítjük meg */}
+            {session && (product.discountLevel1Price || product.discountLevel2Price) && (
               <div className="mt-1 space-y-1 text-xs text-gray-600">
                 {product.discountLevel1Price && (
                   <div>1. szintű ár: {formatPrice(product.discountLevel1Price)}</div>

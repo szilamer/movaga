@@ -7,6 +7,7 @@ import { AddToCartButton } from './AddToCartButton';
 import { formatPrice } from '@/lib/utils';
 import { type Product } from '@/types';
 import { useDiscount } from '@/hooks/useDiscount';
+import { useSession } from 'next-auth/react';
 import { ProductAccordion } from '@/components/ProductAccordion';
 import { getAbsoluteImageUrl, getAbsoluteImageUrls } from '@/utils/imageUtils';
 
@@ -15,20 +16,30 @@ interface ProductDetailsProps {
 }
 
 export function ProductDetails({ product }: ProductDetailsProps) {
+  const { data: session } = useSession();
   const { getDiscountedPrice, loading: discountLoading, userDiscountLevel } = useDiscount();
-  const priceInfo = getDiscountedPrice(
+  
+  // Ha nincs bejelentkezve a felhasználó, csak a normál árat jelenítjük meg
+  const priceInfo = session ? getDiscountedPrice(
     product.price, 
     product.discountedPrice,
     product.discountLevel1Price,
     product.discountLevel2Price
-  );
+  ) : {
+    originalPrice: product.price,
+    productDiscountedPrice: product.discountedPrice && product.discountedPrice < product.price ? product.discountedPrice : null,
+    finalPrice: product.discountedPrice && product.discountedPrice < product.price ? product.discountedPrice : product.price,
+    hasDiscount: product.discountedPrice && product.discountedPrice < product.price
+  };
+  
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   
   console.log('🏷️ ProductDetails render:', {
     productName: product.name,
     discountLoading,
     userDiscountLevel,
-    priceInfo
+    priceInfo,
+    isLoggedIn: !!session
   });
   
   // Ensure we have an array of images or provide a default
@@ -105,8 +116,8 @@ export function ProductDetails({ product }: ProductDetailsProps) {
               )}
             </div>
 
-            {/* Kedvezményes árak megjelenítése */}
-            {(product.discountLevel1Price || product.discountLevel2Price) && (
+            {/* Kedvezményes árak megjelenítése csak bejelentkezett felhasználóknak */}
+            {session && (product.discountLevel1Price || product.discountLevel2Price) && (
               <div className="mt-2 space-y-1">
                 {product.discountLevel1Price && (
                   <div className="text-sm text-gray-700 bg-white inline-block px-2 py-1 rounded mr-2">
