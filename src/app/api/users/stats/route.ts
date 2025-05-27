@@ -46,6 +46,9 @@ export async function GET() {
             where: {
               createdAt: {
                 gte: new Date(new Date().setDate(1))
+              },
+              status: {
+                in: ['PROCESSING', 'SHIPPED', 'COMPLETED'] // Csak érvényes rendelések
               }
             },
             select: {
@@ -66,12 +69,15 @@ export async function GET() {
 
       const totalNetworkSales = networkMembersSales.reduce((total: number, member: { monthlySales: number }) => total + member.monthlySales, 0);
       
-      // Teljes webshop forgalom az aktuális hónapban
+      // Teljes webshop forgalom az aktuális hónapban (csak érvényes rendelések)
       const totalSales = await prisma.order.aggregate({
         _sum: { total: true },
         where: {
           createdAt: {
             gte: new Date(new Date().setDate(1))
+          },
+          status: {
+            in: ['PROCESSING', 'SHIPPED', 'COMPLETED'] // Csak érvényes rendelések
           }
         }
       });
@@ -101,6 +107,9 @@ export async function GET() {
               createdAt: {
                 gte: startDate,
                 lt: endDate
+              },
+              status: {
+                in: ['PROCESSING', 'SHIPPED', 'COMPLETED'] // Csak érvényes rendelések
               }
             }
           });
@@ -153,6 +162,9 @@ export async function GET() {
               where: {
                 createdAt: {
                   gte: new Date(new Date().setDate(1))
+                },
+                status: {
+                  in: ['PROCESSING', 'SHIPPED', 'COMPLETED'] // Csak érvényes rendelések
                 }
               }
             }
@@ -162,6 +174,9 @@ export async function GET() {
           where: {
             createdAt: {
               gte: new Date(new Date().setDate(1))
+            },
+            status: {
+              in: ['PROCESSING', 'SHIPPED', 'COMPLETED'] // Csak érvényes rendelések
             }
           }
         }
@@ -214,6 +229,9 @@ export async function GET() {
                 createdAt: {
                   gte: date,
                   lt: endDate
+                },
+                status: {
+                  in: ['PROCESSING', 'SHIPPED', 'COMPLETED'] // Csak érvényes rendelések
                 }
               },
               {
@@ -223,6 +241,9 @@ export async function GET() {
                 createdAt: {
                   gte: date,
                   lt: endDate
+                },
+                status: {
+                  in: ['PROCESSING', 'SHIPPED', 'COMPLETED'] // Csak érvényes rendelések
                 }
               }
             ]
@@ -276,10 +297,10 @@ export async function GET() {
 
     return response;
   } catch (error) {
-    console.error('Hiba történt a dashboard adatok lekérése közben:', error)
+    console.error('Stats API error:', error);
     return NextResponse.json(
-      { error: 'Hiba történt a dashboard adatok lekérése közben' },
+      { error: 'Hiba történt a statisztikák lekérése során' },
       { status: 500 }
-    )
+    );
   }
 } 

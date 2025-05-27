@@ -40,13 +40,16 @@ async function getNetworkMembersRecursive(userId: string, depth: number = 0, max
 
   const membersWithSalesAndChildren: NetworkMember[] = await Promise.all(
     members.map(async (member): Promise<NetworkMember> => {
-      const completedOrders = await prisma.order.findMany({
+      // Figyelembe vesszük a PROCESSING, SHIPPED és COMPLETED rendeléseket is
+      const validOrders = await prisma.order.findMany({
         where: {
           userId: member.id,
           createdAt: {
             gte: firstDayOfMonth,
           },
-          status: 'COMPLETED' // Csak teljesített rendelések számítanak
+          status: {
+            in: ['PROCESSING', 'SHIPPED', 'COMPLETED'] // Kibővítjük a státuszokat
+          }
         },
         include: {
           items: true
@@ -54,7 +57,7 @@ async function getNetworkMembersRecursive(userId: string, depth: number = 0, max
       });
 
       // Számoljuk ki a termékek árát (szállítási költség nélkül)
-      const monthlySalesTotal = completedOrders.reduce((total, order) => {
+      const monthlySalesTotal = validOrders.reduce((total, order) => {
         const orderItemsTotal = order.items.reduce((itemsTotal, item) => 
           itemsTotal + (item.price * item.quantity), 0);
         return total + orderItemsTotal;
@@ -78,22 +81,11 @@ async function getNetworkMembersRecursive(userId: string, depth: number = 0, max
   return membersWithSalesAndChildren;
 }
 
-// Admin felhasználó saját adatainak lekérése a hálózat gyökereként
+// Admin felhasználó kezelése
 async function getAdminAsRoot(userId: string, session: any): Promise<NetworkMember> {
   // Ellenőrizzük, hogy admin-id-e a userId, ez jelzi a hardcoded admin-t
-  const isHardcodedAdmin = userId === 'admin-id';
-  
-  // Ha hardcoded admin, akkor közvetlenül a session-ből dolgozunk
-  if (isHardcodedAdmin) {
-    console.log('[NETWORK] Using hardcoded admin from session data');
-    
-    // Lekérjük az összes felhasználót
-    const allUsers = await prisma.user.findMany({
-      select: {
-        id: true,
-        referrerId: true,
-      },
-    });
+  if (userId === 'admin-id') {
+    console.log('[NETWORK] Hardcoded admin detected, using session data');
     
     // Lekérjük a null referrer-rel rendelkező felhasználókat
     const nullReferrerUsers = await getNullReferrerUsers();
@@ -106,21 +98,19 @@ async function getAdminAsRoot(userId: string, session: any): Promise<NetworkMemb
       monthlySales: 0,
       joinedAt: new Date(),
       role: 'SUPERADMIN',
-      referralCount: allUsers.filter(user => user.referrerId === null).length,
+      referralCount: nullReferrerUsers.length,
       children: nullReferrerUsers,
     };
   }
-  
-  // Ha nem hardcoded admin, próbáljuk meg az adatbázisból lekérni
+
+  // Próbáljuk megtalálni az admint az adatbázisban
   const admin = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
+    where: { id: userId },
     select: {
       id: true,
       name: true,
       email: true,
-      createdAt: true, 
+      createdAt: true,
       role: true,
       _count: {
         select: {
@@ -162,13 +152,16 @@ async function getAdminAsRoot(userId: string, session: any): Promise<NetworkMemb
   const now = new Date()
   const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   
-  const completedOrders = await prisma.order.findMany({
+  // Figyelembe vesszük a PROCESSING, SHIPPED és COMPLETED rendeléseket is
+  const validOrders = await prisma.order.findMany({
     where: {
       userId: admin.id,
       createdAt: {
         gte: firstDayOfMonth,
       },
-      status: 'COMPLETED' // Csak teljesített rendelések számítanak
+      status: {
+        in: ['PROCESSING', 'SHIPPED', 'COMPLETED'] // Kibővítjük a státuszokat
+      }
     },
     include: {
       items: true
@@ -176,7 +169,7 @@ async function getAdminAsRoot(userId: string, session: any): Promise<NetworkMemb
   });
 
   // Számoljuk ki a termékek árát (szállítási költség nélkül)
-  const monthlySalesTotal = completedOrders.reduce((total, order) => {
+  const monthlySalesTotal = validOrders.reduce((total, order) => {
     const orderItemsTotal = order.items.reduce((itemsTotal, item) => 
       itemsTotal + (item.price * item.quantity), 0);
     return total + orderItemsTotal;
@@ -196,8 +189,8 @@ async function getAdminAsRoot(userId: string, session: any): Promise<NetworkMemb
     monthlySales: monthlySalesTotal,
     joinedAt: admin.createdAt,
     role: admin.role,
-    referralCount: admin._count.referrals,
-    children: [...children, ...nullReferrerUsers.filter(u => u.id !== admin.id)],
+    referralCount: admin._count.referrals + nullReferrerUsers.length,
+    children: [...children, ...nullReferrerUsers],
   };
 }
 
@@ -226,13 +219,16 @@ async function getNullReferrerUsers(): Promise<NetworkMember[]> {
   
   const usersWithSalesAndChildren: NetworkMember[] = await Promise.all(
     users.map(async (user): Promise<NetworkMember> => {
-      const completedOrders = await prisma.order.findMany({
+      // Figyelembe vesszük a PROCESSING, SHIPPED és COMPLETED rendeléseket is
+      const validOrders = await prisma.order.findMany({
         where: {
           userId: user.id,
           createdAt: {
             gte: firstDayOfMonth,
           },
-          status: 'COMPLETED' // Csak teljesített rendelések számítanak
+          status: {
+            in: ['PROCESSING', 'SHIPPED', 'COMPLETED'] // Kibővítjük a státuszokat
+          }
         },
         include: {
           items: true
@@ -240,7 +236,7 @@ async function getNullReferrerUsers(): Promise<NetworkMember[]> {
       });
 
       // Számoljuk ki a termékek árát (szállítási költség nélkül)
-      const monthlySalesTotal = completedOrders.reduce((total, order) => {
+      const monthlySalesTotal = validOrders.reduce((total, order) => {
         const orderItemsTotal = order.items.reduce((itemsTotal, item) => 
           itemsTotal + (item.price * item.quantity), 0);
         return total + orderItemsTotal;
@@ -275,33 +271,77 @@ export async function GET() {
       )
     }
 
-    // Hardkódolt admin kezelése
-    const isHardcodedAdmin = session.user.id === 'admin-id';
-    
-    // Admin vagy hardkódolt admin esetén a felhasználót tesszük a hálózat gyökerébe
+    let networkData: NetworkMember;
+
+    // Admin/SuperAdmin specifikus kezelés
     if (session.user.role === 'ADMIN' || session.user.role === 'SUPERADMIN') {
-      // Átadjuk a session-t is a getAdminAsRoot függvénynek
-      const adminWithNetwork = await getAdminAsRoot(session.user.id, session);
-      
-      const response = NextResponse.json({
-        members: [adminWithNetwork],
+      networkData = await getAdminAsRoot(session.user.id, session);
+    } else {
+      // Normál felhasználó esetén
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          createdAt: true,
+          role: true,
+          _count: {
+            select: {
+              referrals: true,
+            },
+          },
+        },
       });
 
-      // Cache control headers hozzáadása a friss adatok biztosításához
-      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      response.headers.set('Pragma', 'no-cache');
-      response.headers.set('Expires', '0');
-      response.headers.set('Surrogate-Control', 'no-store');
+      if (!user) {
+        return NextResponse.json(
+          { error: 'Felhasználó nem található' },
+          { status: 404 }
+        );
+      }
 
-      return response;
+      const now = new Date()
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      
+      // Figyelembe vesszük a PROCESSING, SHIPPED és COMPLETED rendeléseket is
+      const validOrders = await prisma.order.findMany({
+        where: {
+          userId: user.id,
+          createdAt: {
+            gte: firstDayOfMonth,
+          },
+          status: {
+            in: ['PROCESSING', 'SHIPPED', 'COMPLETED'] // Kibővítjük a státuszokat
+          }
+        },
+        include: {
+          items: true
+        }
+      });
+
+      // Számoljuk ki a termékek árát (szállítási költség nélkül)
+      const monthlySalesTotal = validOrders.reduce((total, order) => {
+        const orderItemsTotal = order.items.reduce((itemsTotal, item) => 
+          itemsTotal + (item.price * item.quantity), 0);
+        return total + orderItemsTotal;
+      }, 0);
+
+      const children = await getNetworkMembersRecursive(user.id);
+
+      networkData = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        monthlySales: monthlySalesTotal,
+        joinedAt: user.createdAt,
+        role: user.role,
+        referralCount: user._count.referrals,
+        children,
+      };
     }
 
-    // Normál felhasználó esetén csak a saját hálózatát kérjük le
-    const networkMembers = await getNetworkMembersRecursive(session.user.id);
-
-    const response = NextResponse.json({
-      members: networkMembers,
-    });
+    const response = NextResponse.json([networkData]);
 
     // Cache control headers hozzáadása a friss adatok biztosításához
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -311,10 +351,10 @@ export async function GET() {
 
     return response;
   } catch (error) {
-    console.error('Hiba történt a hálózati tagok lekérése közben:', error)
+    console.error('Network API error:', error);
     return NextResponse.json(
-      { error: 'Hiba történt a hálózati tagok lekérése közben' },
+      { error: 'Hiba történt a hálózati adatok lekérése során' },
       { status: 500 }
-    )
+    );
   }
 } 
