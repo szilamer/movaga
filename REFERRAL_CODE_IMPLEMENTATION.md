@@ -36,14 +36,14 @@ A dashboard oldal legutóbbi módosításakor lemaradt a meghívó kód küldés
 
 **Példa URL**: `https://movaga.hu/auth/register?ref=USER_ID`
 
-### 3. Dashboard Integráció
+### 3. Hálózat Oldal Integráció
 
-**Fájl**: `src/app/dashboard/page.tsx`
+**Fájl**: `src/app/network/page.tsx`
 
 **Változtatások**:
 - ReferralLinkBox komponens importálása
-- Komponens elhelyezése a PointsHistory után
-- Megfelelő pozicionálás a dashboard layoutban
+- Komponens elhelyezése a hálózat oldal tetején
+- Megfelelő pozicionálás a hálózati diagram előtt
 
 ## Funkció Használata
 
@@ -132,7 +132,7 @@ A dashboard oldal legutóbbi módosításakor lemaradt a meghívó kód küldés
 ## Kapcsolódó Fájlok
 
 - `src/components/dashboard/ReferralLinkBox.tsx` - Fő komponens
-- `src/app/dashboard/page.tsx` - Dashboard integráció
+- `src/app/network/page.tsx` - Hálózat oldal integráció
 - `src/app/auth/register/page.tsx` - Regisztrációs oldal frissítés
 - `src/app/api/users/route.ts` - Regisztrációs API (referrer kezelés)
 - `src/components/ui/card.tsx` - UI komponens

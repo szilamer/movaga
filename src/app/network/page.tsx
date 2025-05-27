@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import NetworkTree from '@/components/network/NetworkTree'
+import ReferralLinkBox from '@/components/dashboard/ReferralLinkBox'
 
 interface NetworkMember {
   id: string;
@@ -152,6 +153,11 @@ export default function NetworkPage() {
             </svg>
             {refreshing ? 'Frissítés...' : 'Frissítés'}
           </button>
+        </div>
+
+        {/* Meghívó kód küldése szekció */}
+        <div className="mb-8">
+          <ReferralLinkBox />
         </div>
 
         {networkMembers.length === 0 ? (

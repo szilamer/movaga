@@ -8,7 +8,6 @@ import SalesChart from '@/components/dashboard/SalesChart'
 import NetworkStats from '@/components/dashboard/NetworkStats'
 import CommissionHistory from '@/components/dashboard/CommissionHistory'
 import PointsHistory from '@/components/dashboard/PointsHistory'
-import ReferralLinkBox from '@/components/dashboard/ReferralLinkBox'
 import OrderDetails from '@/components/orders/OrderDetails'
 
 interface DashboardData {
@@ -265,9 +264,6 @@ export default function DashboardPage() {
 
         {/* Jutalékpontok szekció */}
         <PointsHistory />
-
-        {/* Meghívó kód küldése szekció */}
-        <ReferralLinkBox />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <NetworkStats
