@@ -35,6 +35,8 @@ export default async function HomePage() {
     description: p.description,
     price: p.price,
     discountedPrice: p.discountedPrice,
+    discountLevel1Price: p.discountLevel1Price,
+    discountLevel2Price: p.discountLevel2Price,
     images: p.images && p.images.length > 0 ? p.images : ['/hero-bg.jpg'],
     categoryId: p.categoryId,
     category: {
@@ -46,6 +48,7 @@ export default async function HomePage() {
     status: p.status,
     createdAt: p.createdAt,
     updatedAt: p.updatedAt,
+    pointValue: p.pointValue ?? 0,
   }))
 
   return (

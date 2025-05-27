@@ -43,6 +43,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     descriptionSections,
     price: product.price,
     discountedPrice: product.discountedPrice,
+    discountLevel1Price: product.discountLevel1Price,
+    discountLevel2Price: product.discountLevel2Price,
     images: product.images,
     categoryId: product.categoryId,
     category: {

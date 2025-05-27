@@ -19,7 +19,12 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
   const { addItem } = useCart();
   const { getDiscountedPrice } = useDiscount();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const priceInfo = getDiscountedPrice(product.price, product.discountedPrice);
+  const priceInfo = getDiscountedPrice(
+    product.price, 
+    product.discountedPrice,
+    product.discountLevel1Price,
+    product.discountLevel2Price
+  );
 
   const handleAddToCart = () => {
     if (!session) {

@@ -15,7 +15,7 @@ interface ProductDetailsProps {
 }
 
 export function ProductDetails({ product }: ProductDetailsProps) {
-  const { getDiscountedPrice } = useDiscount();
+  const { getDiscountedPrice, loading: discountLoading, userDiscountLevel } = useDiscount();
   const priceInfo = getDiscountedPrice(
     product.price, 
     product.discountedPrice,
@@ -23,6 +23,13 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     product.discountLevel2Price
   );
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  
+  console.log('🏷️ ProductDetails render:', {
+    productName: product.name,
+    discountLoading,
+    userDiscountLevel,
+    priceInfo
+  });
   
   // Ensure we have an array of images or provide a default
   const rawImages = product.images && product.images.length > 0 

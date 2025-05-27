@@ -22,7 +22,11 @@ export default async function ProductsPage() {
       orderBy: {
         name: 'asc',
       },
-    }),
+    }).then(categories => categories.map(category => ({
+      ...category,
+      description: category.description ?? undefined,
+      parentId: category.parentId ?? undefined
+    }))),
   ]);
 
   // Konvertáljuk a Prisma Product típust a saját Product típusunkra
@@ -32,13 +36,24 @@ export default async function ProductsPage() {
     description: product.description,
     price: product.price,
     discountedPrice: product.discountedPrice,
+    discountLevel1Price: product.discountLevel1Price,
+    discountLevel2Price: product.discountLevel2Price,
     images: product.images && product.images.length > 0 ? product.images : ['/hero-bg.jpg'],
     categoryId: product.categoryId,
-    category: product.category,
+    category: {
+      id: product.category.id,
+      name: product.category.name,
+      description: product.category.description ?? undefined,
+      slug: product.category.slug,
+      parentId: product.category.parentId ?? undefined,
+      createdAt: product.category.createdAt,
+      updatedAt: product.category.updatedAt
+    },
     stock: product.stock,
     status: product.status,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
+    pointValue: product.pointValue ?? 0,
   }));
 
   return (
