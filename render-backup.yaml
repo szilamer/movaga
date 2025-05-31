@@ -1,0 +1,39 @@
+services:
+  - type: cron
+    name: movaga-db-backup
+    env: node
+    repo: https://github.com/szilamer/movaga
+    branch: main
+    schedule: "0 3 * * *"  # Daily at 3 AM UTC
+    buildCommand: |
+      # Install required tools
+      apt-get update
+      apt-get install -y postgresql-client-15 curl unzip gzip
+    startCommand: bash scripts/create-backup-cron.sh
+    envVars:
+      # Database connection (use your actual DATABASE_URL from Render dashboard)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: movaga-postgres  # Replace with your actual database name
+          property: connectionString
+      
+      # AWS S3 Configuration (set these in Render dashboard)
+      - key: AWS_ACCESS_KEY_ID
+        value: ""  # Set this as secret in Render
+      - key: AWS_SECRET_ACCESS_KEY
+        value: ""  # Set this as secret in Render
+      - key: AWS_REGION
+        value: "eu-west-1"  # Change to your preferred region
+      - key: S3_BUCKET_NAME
+        value: "movaga-database-backups"  # Change to your bucket name
+      
+      # PostgreSQL version (match your database version)
+      - key: POSTGRES_VERSION
+        value: "15"
+      
+      # Optional: Email notifications
+      - key: NOTIFICATION_EMAIL
+        value: "admin@movaga.hu"
+    
+    # Use a small instance for backup job
+    plan: starter 

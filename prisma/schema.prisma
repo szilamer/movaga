@@ -20,6 +20,8 @@ model User {
   discountValidUntil DateTime?
   totalPoints     Int              @default(0)  // Összes megszerzett jutalékpont
   referrerId      String?
+  resetToken      String?          // Token a jelszó visszaállításához
+  resetTokenExpiry DateTime?       // Token lejárati ideje
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   accounts        Account[]
@@ -33,6 +35,7 @@ model User {
 
   @@map("users")
   @@index([referrerId])
+  @@index([resetToken])
 }
 
 model ShippingAddress {

@@ -664,4 +664,165 @@ export async function sendOrderConfirmationEmail({
     paymentMethod,
     orderStatus: 'PENDING',
   });
+}
+
+export async function sendPasswordResetEmail(to: string, resetToken: string) {
+  console.log('[EMAIL] Sending password reset email to:', to);
+  
+  if (!transporter && !fallbackTransporter) {
+    console.error('[EMAIL] No email transporter available for password reset');
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Jelszó visszaállítása - Movaga</title>
+    </head>
+    <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+      <table style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <tr>
+          <td style="background-color: #2563eb; padding: 30px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">Movaga</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 40px 30px;">
+            <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 20px;">Jelszó visszaállítása</h2>
+            
+            <p style="color: #4b5563; line-height: 1.6; margin: 0 0 25px 0;">
+              Kaptunk egy kérést a jelszavad visszaállítására. Ha ez nem te voltál, kérjük, hagyd figyelmen kívül ezt az emailt.
+            </p>
+            
+            <p style="color: #4b5563; line-height: 1.6; margin: 0 0 30px 0;">
+              A jelszavad visszaállításához kattints az alábbi gombra:
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" 
+                 style="background-color: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                Jelszó visszaállítása
+              </a>
+            </div>
+            
+            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0;">
+              Ez a link 1 órán belül lejár. Ha a gomb nem működik, másold be ezt a linket a böngésződbe:
+              <br>
+              <a href="${resetUrl}" style="color: #2563eb; word-break: break-all;">${resetUrl}</a>
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+            
+            <p style="color: #6b7280; font-size: 12px; margin: 0;">
+              Ha nem kérted a jelszavad visszaállítását, kérjük, hagyd figyelmen kívül ezt az emailt.
+              Biztonsági okokból javasoljuk, hogy jelentkezz be a fiókodba és ellenőrizd a beállításokat.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background-color: #f9fafb; padding: 20px 30px; text-align: center;">
+            <p style="color: #6b7280; font-size: 12px; margin: 0;">
+              © ${new Date().getFullYear()} Movaga. Minden jog fenntartva.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const textContent = `
+Jelszó visszaállítása - Movaga
+
+Kaptunk egy kérést a jelszavad visszaállítására. Ha ez nem te voltál, kérjük, hagyd figyelmen kívül ezt az emailt.
+
+A jelszavad visszaállításához látogasd meg az alábbi linket:
+${resetUrl}
+
+Ez a link 1 órán belül lejár.
+
+Ha nem kérted a jelszavad visszaállítását, kérjük, hagyd figyelmen kívül ezt az emailt.
+
+© ${new Date().getFullYear()} Movaga. Minden jog fenntartva.
+  `;
+
+  const mailOptions = {
+    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    to,
+    subject: 'Jelszó visszaállítása - Movaga',
+    text: textContent,
+    html: htmlContent,
+  };
+
+  return await sendEmailWithFallback(mailOptions, 'Password Reset');
+}
+
+/**
+ * Sends email with fallback support
+ */
+async function sendEmailWithFallback(mailOptions: any, emailType: string): Promise<{ success: boolean; error?: string }> {
+  console.log(`[EMAIL] Attempting to send ${emailType} email to:`, mailOptions.to);
+  
+  let success = false;
+  let lastError: Error | null = null;
+  const maxRetries = 2;
+  
+  // Try primary first (if available)
+  if (transporter) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      if (attempt > 0) {
+        console.log(`[EMAIL] Retry attempt ${attempt} of ${maxRetries}`);
+        // Wait briefly before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Reinitialize transporter on retry
+        if (attempt === 1) {
+          console.log('[EMAIL] Reinitializing transporter before retry');
+          await reinitializeEmailTransporter();
+        }
+      }
+      
+      try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`[EMAIL] ${emailType} email successfully sent: to=${mailOptions.to}, messageId=${info.messageId}`);
+        success = true;
+        break;
+      } catch (sendError) {
+        lastError = sendError as Error;
+        primaryConnectionFailures++;
+        console.error(`[EMAIL] Error sending ${emailType} email via SMTP:`, sendError);
+      }
+    }
+  }
+  
+  // Try fallback if primary failed and fallback is available
+  if (!success && fallbackTransporter) {
+    console.log(`[EMAIL] Primary email service failed, trying fallback for ${emailType}`);
+    
+    try {
+      const fallbackOptions = {
+        ...mailOptions,
+        from: process.env.FALLBACK_SMTP_FROM || process.env.FALLBACK_SMTP_USER || 'no-reply@movaga.hu'
+      };
+      
+      const info = await fallbackTransporter.sendMail(fallbackOptions);
+      console.log(`[EMAIL] ${emailType} email successfully sent via fallback: to=${mailOptions.to}, messageId=${info.messageId}`);
+      success = true;
+    } catch (fallbackError) {
+      console.error(`[EMAIL] Fallback email service also failed for ${emailType}:`, fallbackError);
+      lastError = fallbackError as Error;
+    }
+  }
+  
+  if (!success) {
+    console.error(`[EMAIL] All attempts failed for sending ${emailType} email to:`, mailOptions.to);
+    return { success: false, error: lastError?.message || 'Failed to send email' };
+  }
+  
+  return { success: true };
 } 

@@ -92,6 +92,17 @@ export default function LoginPage() {
             </div>
           </div>
 
+          <div className="flex items-center justify-between">
+            <div className="text-sm">
+              <Link
+                href="/auth/forgot-password"
+                className="text-primary hover:text-primary/90"
+              >
+                Elfelejtett jelszó?
+              </Link>
+            </div>
+          </div>
+
           <div>
             <button
               type="submit"

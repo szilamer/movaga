@@ -47,6 +47,84 @@ export function verifyPassword(plain: string, hashed: string): Promise<boolean> 
   }
 }
 
+// Password reset utility functions
+export function generateResetToken(): string {
+  return randomBytes(32).toString('hex');
+}
+
+export async function createPasswordResetToken(email: string): Promise<{ success: boolean; token?: string; error?: string }> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true }
+    });
+
+    if (!user || !user.email) {
+      // Don't reveal that email doesn't exist for security
+      return { success: true };
+    }
+
+    const token = generateResetToken();
+    const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetToken: token,
+        resetTokenExpiry: expiry
+      }
+    });
+
+    return { success: true, token };
+  } catch (error) {
+    console.error('Error creating password reset token:', error);
+    return { success: false, error: 'Failed to create reset token' };
+  }
+}
+
+export async function verifyResetToken(token: string): Promise<{ success: boolean; userId?: string; error?: string }> {
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        resetToken: token,
+        resetTokenExpiry: {
+          gt: new Date()
+        }
+      },
+      select: { id: true }
+    });
+
+    if (!user) {
+      return { success: false, error: 'Invalid or expired token' };
+    }
+
+    return { success: true, userId: user.id };
+  } catch (error) {
+    console.error('Error verifying reset token:', error);
+    return { success: false, error: 'Failed to verify token' };
+  }
+}
+
+export async function resetUserPassword(userId: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const hashedPassword = await hashPassword(newPassword);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null
+      }
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    return { success: false, error: 'Failed to reset password' };
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
